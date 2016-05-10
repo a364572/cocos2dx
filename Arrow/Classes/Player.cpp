@@ -19,6 +19,9 @@ bool Player::init(Vec2 pos) {
 		return false;
 	}
 	this->playerPos = pos;
+	isRunAction = false;
+	arrowArr = Array::create();
+	arrowArr->retain();
 	createPlayer();
 	createPlayerHP();
 	scheduleUpdate();
@@ -71,6 +74,45 @@ void Player::rorateArrow(Point touch) {
 	arrowSprite->runAction(RotateTo::create(duration, degree));
 }
 
-void Player::update(float delat) {
+void Player::finishShoot(Sprite *arrow) {
+	//arrow->removeFromParentAndCleanup(true);
+	log("Y: %f", arrow->getPositionX());
+	isRunAction = false;
+}
+/*
+void Player::createAndShootArrow(Point point) {
+	isRunAction = true;
+	auto animation = AnimationCache::getInstance()->getAnimation("player");
+	auto animate = Animate::create(animation);
 
+	auto funcall1 = CallFunc::create(CC_CALLBACK_0(Player::shootArrow, this));
+	auto delay = DelayTime::create(0.5f);
+	auto funcall2 = CallFunc::create(CC_CALLBACK_0(Player::finishShoot, this));
+	playerBodySprite->runAction(Sequence::create(animate, funcall1, delay, funcall2, NULL));
+}
+*/
+void Player::shootArrow(Point touch) {
+	isRunAction = true;
+	auto arrow = Sprite::create("arrow1.png");
+	arrow->setPosition(Vec2(arrowSprite->getPositionX(),
+		arrowSprite->getPositionY()));
+	playerBodySprite->addChild(arrow);
+
+	Point world = arrow->convertToWorldSpace(Vec2(0, 0));
+	auto path = ArrowPath::create(2.0f, touch, Vec2(touch.x * 2 - world.x, 0));
+	arrow->runAction(Sequence::create(path, NULL));
+	arrowArr->addObject(arrow);
+	isRunAction = false;
+}
+
+void Player::update(float delat) {
+	for (int i = 0; i < arrowArr->count(); i++) {
+		auto arrow = (Sprite *)arrowArr->getObjectAtIndex(i);
+		if (!arrow->isRunning()) {
+			arrowArr->removeObjectAtIndex(i);
+			i--;
+			arrow->removeFromParent();
+			continue;
+		}
+	}
 }

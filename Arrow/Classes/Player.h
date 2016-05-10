@@ -11,7 +11,9 @@ public:
 	void createPlayer();
 	void createPlayerHP();
 	void rorateArrow(Point touch);
-	void shootArrow();
+	void shootArrow(Point point);
+	void finishShoot(Sprite *sprite);
+	void createAndShootArrow(Point point);
 	void update(float delat);
 
 	CC_SYNTHESIZE(int, playerHP, PlayerHP);
@@ -23,7 +25,18 @@ private:
 	Sprite *playerBodySprite;
 	Sprite *arrowSprite;
 	Sprite *hpSprite;
+	Array *arrowArr;
 	ProgressTimer *hpBar;
-	ccBezierConfig bezier;
 	DrawNode* drawNode;
+};
+
+class ArrowPath : public BezierBy{
+public:
+	//ArrowPath();
+	static ArrowPath* create(float time, Point ctlPoint, Point endPoint);
+	bool initWithDuration(float t, Point ctlPoint, Point endPoint);
+	virtual void update(float time);
+private:
+	Point ctlPoint;
+	Point endPoint;
 };

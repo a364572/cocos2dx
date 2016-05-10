@@ -44,7 +44,9 @@ void GameScene::onTouchMoved(Touch *touch, Event *unused_event) {
 }
 
 void GameScene::onTouchEnded(Touch *touch, Event *unused_event) {
-
+	if (!player->getIsRunAction()) {
+		player->shootArrow(touch->getLocation());
+	}
 }
 
 Scene *GameScene::createScene() {
