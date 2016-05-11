@@ -10,7 +10,7 @@ public:
 
 	void createPlayer();
 	void createPlayerHP();
-	void rorateArrow(Point touch);
+	void rotateArrow(Point touch);
 	void shootArrow(Point point);
 	void finishShoot(Sprite *sprite);
 	void createAndShootArrow(Point point);
@@ -24,10 +24,12 @@ private:
 	Vec2 playerPos;
 	Sprite *playerBodySprite;
 	Sprite *arrowSprite;
+	Sprite *outArrow;
 	Sprite *hpSprite;
 	Array *arrowArr;
 	ProgressTimer *hpBar;
 	DrawNode* drawNode;
+	ParticleMeteor* ps;
 };
 
 class ArrowPath : public BezierBy{
@@ -36,7 +38,7 @@ public:
 	static ArrowPath* create(float time, Point ctlPoint, Point endPoint);
 	bool initWithDuration(float t, Point ctlPoint, Point endPoint);
 	virtual void update(float time);
-private:
+
 	Point ctlPoint;
 	Point endPoint;
 };

@@ -9,6 +9,7 @@ bool ArrowPath::initWithDuration(float t, Point ctlPoint, Point endPoint) {
 	if (ActionInterval::initWithDuration(t)) {
 		this->ctlPoint = ctlPoint;
 		this->endPoint = endPoint;
+
 		return true;
 	}
 	return false;
@@ -17,6 +18,7 @@ ArrowPath* ArrowPath::create(float time, Point ctlPoint, Point endPoint) {
 	ArrowPath *path = new ArrowPath();
 	path->initWithDuration(time, ctlPoint, endPoint);
 	path->autorelease();
+
 	return path;
 }
 

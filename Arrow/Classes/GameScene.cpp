@@ -20,6 +20,41 @@ bool GameScene::init() {
 	player = Player::create(Vec2(origin.x + 40, origin.y + 70));
 	addChild(player, 1);
 
+	log("SpriteFrameCache");
+	auto spriteCache = SpriteFrameCache::getInstance();
+	spriteCache->addSpriteFramesWithFile("phoenix.plist", "phoenix.png");
+	
+	Vector<SpriteFrame *> vec;
+	for (int i = 0; i < 16; i++) {
+
+		log(i);
+		char tmp[16];
+		sprintf(tmp, "f-%d.png", i);
+		auto frame = spriteCache->getSpriteFrameByName(tmp);
+		vec.pushBack(frame);
+		if (i % 4 == 3) {
+			auto animation = Animation::createWithSpriteFrames(vec, 0.3f, -1);
+			auto animate = Animate::create(animation);
+			sprintf(tmp, "f-%d.png", i - 3);
+			auto sprite = Sprite::createWithSpriteFrameName(tmp);
+			sprite->setAnchorPoint(Vec2(0, 0));
+			sprite->setPosition(Vec2(86 * (i / 4), 200));
+			sprite->runAction(animate);
+			addChild(sprite);
+			vec.clear();
+		}
+	}
+
+	TTFConfig config("fonts/Marker Felt.ttf", 30);
+	auto label = Label::createWithTTF(config, "createLabelByTTF", TextHAlignment::CENTER);
+	label->setString("Example!");
+	label->enableGlow(Color4B::ORANGE);
+	label->setAnchorPoint(Vec2(0.5, 0.5));
+	label->setPosition(150, 100);
+	addChild(label);
+
+
+
 	auto listen = EventListenerTouchOneByOne::create();
 	listen->onTouchBegan = CC_CALLBACK_2(GameScene::onTouchBegan, this);
 	listen->onTouchMoved = CC_CALLBACK_2(GameScene::onTouchMoved, this);
@@ -38,7 +73,7 @@ bool GameScene::onTouchBegan(Touch *touch, Event *unused_event) {
 void GameScene::onTouchMoved(Touch *touch, Event *unused_event) {
 	curPos = touch->getLocation();
 	if (!curPos.equals(prePos)) {
-		player->rorateArrow(curPos);
+		player->rotateArrow(curPos);
 	}
 	prePos = curPos;
 }

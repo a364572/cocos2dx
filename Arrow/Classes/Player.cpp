@@ -55,9 +55,10 @@ void Player::createPlayerHP() {
 	hpBar->setPosition(Vec2(0, 0));
 	hpBar->setAnchorPoint(Vec2(0, 0));
 	hpSprite->addChild(hpBar);
+
 }
 
-void Player::rorateArrow(Point touch) {
+void Player::rotateArrow(Point touch) {
 	Vec2 diff = touch - playerBodySprite->getPosition();
 	auto angle = diff.getAngle();
 	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
@@ -93,26 +94,31 @@ void Player::createAndShootArrow(Point point) {
 */
 void Player::shootArrow(Point touch) {
 	isRunAction = true;
-	auto arrow = Sprite::create("arrow1.png");
-	arrow->setPosition(Vec2(arrowSprite->getPositionX(),
+	outArrow = Sprite::create("arrow1.png");
+	outArrow->setPosition(Vec2(arrowSprite->getPositionX(),
 		arrowSprite->getPositionY()));
-	playerBodySprite->addChild(arrow);
+	playerBodySprite->addChild(outArrow);
 
-	Point world = arrow->convertToWorldSpace(Vec2(0, 0));
+	ps = ParticleMeteor::createWithTotalParticles(100);
+	ps->setTexture(Director::getInstance()->getTextureCache()->addImage("arrow.png"));
+	ps->setPosition(Vec2(0, 0));
+	ps->setScale(0.1);
+	addChild(ps);
+
+	Point world = outArrow->convertToWorldSpace(Vec2(0, 0));
 	auto path = ArrowPath::create(2.0f, touch, Vec2(touch.x * 2 - world.x, 0));
-	arrow->runAction(Sequence::create(path, NULL));
-	arrowArr->addObject(arrow);
-	isRunAction = false;
+	outArrow->runAction(Sequence::create(path, CallFunc::create([=]()
+	{
+		isRunAction = false;
+		outArrow->removeFromParentAndCleanup(true);
+		ps->removeFromParentAndCleanup(true);
+	}), NULL));
+	//arrowArr->addObject(arrow);
+	//isRunAction = false;
 }
 
 void Player::update(float delat) {
-	for (int i = 0; i < arrowArr->count(); i++) {
-		auto arrow = (Sprite *)arrowArr->getObjectAtIndex(i);
-		if (!arrow->isRunning()) {
-			arrowArr->removeObjectAtIndex(i);
-			i--;
-			arrow->removeFromParent();
-			continue;
-		}
+	if (isRunAction) {
+		ps->setPosition(outArrow->convertToWorldSpace(Vec2(0, 0)));
 	}
 }
