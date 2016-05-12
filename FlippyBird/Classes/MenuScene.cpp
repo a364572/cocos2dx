@@ -1,7 +1,8 @@
 #include "MenuScene.h"
-
+#include "GameScene.h"
 void MenuScene::startGame(Ref* ref) {
 	log("start game");
+	Director::getInstance()->replaceScene(TransitionJumpZoom::create(1, GameScene::createScene()));
 }
 
 void MenuScene::endGame(Ref* ref) {
