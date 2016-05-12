@@ -12,12 +12,17 @@ public :
 	bool onTouchBegan(Touch *touch, Event *unused_event);
 	void onTouchMoved(Touch *touch, Event *unused_event);
 	void onTouchEnded(Touch *touch, Event *unused_event);
+	void startGame(Ref* ref);
+	void stopGame(Ref *ref);
+	bool colllisionWithWall();
 	float getRandomY(float height, float prab);
 	
 	CREATE_FUNC(GameScene);
 private:
 	int flashCount;
 	int collisionIndex;
+	int previousPipe;
+	int score;
 	float pipeBirdInterval;
 	float lastTime;
 	float runTime;
@@ -27,4 +32,6 @@ private:
 	Point origin;
 	Vector<Sprite *> pipeVec;
 	Sprite *birdSprite;
+	Label *scoreLabel;
+	Menu *menu;
  };

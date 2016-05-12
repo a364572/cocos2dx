@@ -35,6 +35,28 @@ bool GameScene::init() {
 		auto frame = spriteCache->getSpriteFrameByName(tmp);
 		vec.pushBack(frame);
 	}
+
+	scoreLabel = Label::create();
+	scoreLabel->setAnchorPoint(Vec2(0, 1));
+	scoreLabel->setPosition(origin.x, origin.y + visible.height);
+	addChild(scoreLabel, 3);
+
+	TTFConfig config("fonts/Marker Felt.ttf", 30);
+	auto startLabel = Label::createWithTTF(config, "Start", TextHAlignment::CENTER);
+	startLabel->enableGlow(Color4B::MAGENTA);
+	auto menuRestart = MenuItemLabel::create(startLabel, CC_CALLBACK_1(GameScene::startGame, this));
+	menuRestart->setPosition(0, 50);
+
+	auto exitLabel = Label::createWithTTF(config, "Exit", TextHAlignment::CENTER);
+	exitLabel->enableGlow(Color4B::ORANGE);
+	auto menuExit = MenuItemLabel::create(exitLabel, CC_CALLBACK_1(GameScene::stopGame, this));
+	menuExit->setPosition(0, 0);
+
+	menu = Menu::create(menuRestart, menuExit, NULL);
+	menu->setAnchorPoint(Vec2(0.5, 0.5));
+	menu->setPosition(visible.width / 2 + origin.x, visible.height / 2 + origin.y);
+	addChild(menu, 3);
+
 	auto animation = Animation::createWithSpriteFrames(vec, 0.2f, -1);
 	auto animate = Animate::create(animation);
 
@@ -44,7 +66,7 @@ bool GameScene::init() {
 	addChild(birdSprite, 2);
 	
 	auto pipeTemplate = Sprite::create("pipe.jpg");
-	PIPE_INTERVAL = pipeTemplate->getContentSize().width * 5.5;
+	PIPE_INTERVAL = pipeTemplate->getContentSize().width * 5;
 	float beginX = birdSprite->convertToWorldSpace(Vec2(0, 0)).x + PIPE_INTERVAL;
 	
 	while (beginX <= origin.x + visible.width + 2 * PIPE_INTERVAL) {
@@ -103,9 +125,25 @@ void GameScene::update(float time) {
 	auto collisionBtm = pipeVec.at(collisionIndex);
 	auto collisionTop = pipeVec.at(collisionIndex + 1);
 	if (birdSprite->boundingBox().intersectsRect(collisionBtm->boundingBox()) ||
-		birdSprite->boundingBox().intersectsRect(collisionTop->boundingBox())) {
+		birdSprite->boundingBox().intersectsRect(collisionTop->boundingBox()) ||
+		colllisionWithWall()) {
+		//birdSprite->stopAllActions();
+		for (int i = 0; i < pipeVec.size(); i++) {
+			pipeVec.at(i)->stopAllActions();
+		}
 		unscheduleUpdate();
+		menu->setVisible(true);
 		return;
+	}
+
+	//鸟的位置超过了水管，分数加1
+	if (previousPipe != collisionIndex && 
+		collisionBtm->getPositionX() + collisionBtm->getContentSize().width / 2 < origin.x) {
+		score++;
+		char tmp[16];
+		sprintf(tmp, "%04d", score);
+		scoreLabel->setString(tmp);
+		previousPipe = collisionIndex;
 	}
 
 	for (int i = 0; i < pipeVec.size(); i += 2) {
@@ -149,6 +187,11 @@ void GameScene::initVariable() {
 	runTime = 0.0f;
 	flashCount = 0;
 	collisionIndex = 0;
+	previousPipe = -1;
+	score = 0;
+
+	menu->setVisible(false);
+	scoreLabel->setString("0000");
 
 	birdSprite->setPosition(origin.x, origin.y + visible.height / 2);
 	
@@ -164,6 +207,23 @@ void GameScene::initVariable() {
 		ranX += PIPE_INTERVAL;
 	}
 	scheduleUpdate();
+}
+
+void GameScene::startGame(Ref* ref) {
+	initVariable();
+	menu->setVisible(false);
+}
+
+void GameScene::stopGame(Ref *ref) {
+	Director::getInstance()->end();
+}
+bool GameScene::colllisionWithWall() {
+	float y = (birdSprite->convertToWorldSpace(Vec2(0, 0))).y;
+	if (y - birdSprite->getContentSize().height / 2 <= origin.y ||
+		y + birdSprite->getContentSize().height / 2 >= origin.y + visible.height) {
+		return true;
+	}
+	return false;
 }
 
 float GameScene::getRandomY(float height, float prab) {
