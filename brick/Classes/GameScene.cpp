@@ -1,8 +1,10 @@
 #include "GameScene.h"
 
-#define BALL_SPEED 200
+#define ACC_SPEED 10
 bool GameScene::onTouchBegan(Touch *touch, Event *unused_event) {
 	preX = touch->getLocation().x;
+	preFlashCount = curFlashCount = 0;
+	horAcceration = 0;
 	if (!isStart) {
 		isStart = true;
 		scheduleUpdate();
@@ -51,16 +53,113 @@ void GameScene::onTouchMoved(Touch *touch, Event *unused_event) {
 		else {
 			bottom->setPosition(bottom->getPositionX() + diff, bottom->getPositionY());
 		}
+		if (curFlashCount - preFlashCount > 0) {
+			float flashTime = Director::getInstance()->getAnimationInterval() * (curFlashCount - preFlashCount);
+			horAcceration = diff / flashTime;
+		}
+
+		preFlashCount = curFlashCount;
+		
 	}
 	preX = touch->getLocation().x;
 }
 
 void GameScene::onTouchEnded(Touch *touch, Event *unused_event) {
+	preFlashCount = curFlashCount = 0;
+	horAcceration = 0;
+}
+
+void GameScene::collisionTop() {
+	auto angle = preDirection.getAngle();
+	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
+	log("top    Degree:%f Angle:%f", degree, angle);
+	//if ((ball->getPositionY() >= origin.y + visible.height) && preDirection.y > 0) {
+		if (degree > -90) {
+			preDirection.x = 1;
+			preDirection.y = -tan(angle);
+		}
+		else if (degree < -90) {
+			preDirection.x = -1;
+			preDirection.y = -tan(M_PI - angle);
+		}
+		else {
+			preDirection.x = 0;
+			preDirection.y = -1;
+		}
+		moveBall(preDirection);
+	//}
+}
+
+void GameScene::collisionButtom(bool base) {
+
+	auto angle = preDirection.getAngle();
+	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
+	log("bottom    Degree:%f Angle:%f", degree, angle);
+	if (preDirection.y < 0) {
+		if (degree > 90) {
+			preDirection.x = -1;
+			preDirection.y = tan(angle - M_PI);
+		}
+		else if (degree < 90) {
+			preDirection.x = 1;
+			preDirection.y = tan(2 * M_PI - angle);
+		}
+		else {
+			preDirection.x = 0;
+			preDirection.y = 1;
+		}
+		//和接收盘接触的话还得考虑加速度
+		if (base)
+		{
+			preDirection.x += horAcceration * Director::getInstance()->getAnimationInterval() / 3;
+		}
+		moveBall(preDirection);
+	}
+}
+
+void GameScene::collisionLeft() {
+	auto angle = preDirection.getAngle();
+	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
+	log("left    Degree:%f Angle:%f", degree, angle);
+	//if (ball->getPositionX() <= origin.x && preDirection.x < 0) {
+		if (degree < -90) {
+			preDirection.x = 1;
+			preDirection.y = tan(M_PI - angle);
+		}
+		else if (degree > 90) {
+			preDirection.x = 1;
+			preDirection.y = -tan(angle - M_PI);
+		}
+		moveBall(preDirection);
+	//}
+}
+
+void GameScene::collisionRight() {
+	auto angle = preDirection.getAngle();
+	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
+	log("right    Degree:%f Angle:%f", degree, angle);
+	//if ((ball->getPositionX() >= origin.x + visible.width) && preDirection.x > 0) {
+		if (degree < 0 && degree > -90) {
+			preDirection.x = -1;
+			preDirection.y = tan(angle);
+			moveBall(preDirection);
+		}
+		if (degree > 0 && degree < 90)
+		{
+			preDirection.x = -1;
+			preDirection.y = -tan(-angle);
+			moveBall(preDirection);
+		}
+	//}
 }
 
 void GameScene::initGame() {
 	isStart = false;
 	totalBrick = 0;
+	horAcceration = 0;
+	preFlashCount = 0;
+	curFlashCount = 0;
+	ballSpeed = 200;
 
 	bottom->setVisible(true);
 	bottom->setAnchorPoint(Vec2(0.5, 0));
@@ -74,6 +173,7 @@ void GameScene::initGame() {
 		auto vec = bricks.at(i);
 		for (int j = 0; j < vec.size(); j++) {
 			auto brick = vec.at(j);
+			brick->stopAllActions();
 			brick->setAnchorPoint(Vec2(0, 1));
 			brick->setPosition(origin.x + j * brick->getContentSize().width,
 				origin.y + visible.height - i * brick->getContentSize().height);
@@ -103,12 +203,15 @@ bool GameScene::init() {
 
 	int countX = visible.width / brick->getContentSize().width;
 	int countY = visible.height * 0.4 / brick->getContentSize().height;
+	float sizeX = visible.width / countX;
 
 	for (int i = 0; i < countY; i++) {
 		Vector<Sprite *> vec;
 		for (int j = 0; j < countX; j++) {
 			brick = Sprite::create("brick.png");
 			brick->setVisible(false);
+			brick->setContentSize(Size(sizeX, brick->getContentSize().height));
+			brick->setScaleX(sizeX / brick->getContentSize().width);
 			vec.pushBack(brick);
 			addChild(brick, 1);
 		}
@@ -140,73 +243,30 @@ void GameScene::moveBall(Vec2 vec) {
 	ball->getColor();
 	ball->setColor(Color3B(100, 79, 187));
 	ball->stopAllActions();
-	ball->runAction(MoveBy::create(len / BALL_SPEED, vec));
+	ball->runAction(MoveBy::create(len / ballSpeed, vec));
 }
 
-void GameScene::changeDirection(bool isBase) {
-	auto angle = preDirection.getAngle();
-	auto degree = CC_RADIANS_TO_DEGREES(-1 * angle);
+void GameScene::changeDirection(int direction, bool base) {
 	//log("Angle:%f Degree:%f", angle, degree);
 	//和底盘接触的情况
-	if (isBase)
+	switch (direction)
 	{
-		if (preDirection.y < 0) {
-			if (degree > 90) {
-				preDirection.x = -1;
-				preDirection.y = tan(angle - M_PI);
-			}
-			else if (degree < 90) {
-				preDirection.x = 1;
-				preDirection.y = tan(2 * M_PI - angle);
-			}
-			else {
-				preDirection.x = 0;
-				preDirection.y = 1;
-			}
-			moveBall(preDirection);
-		}
-
-		return;
+	case 1:
+		collisionTop();
+		break;
+	case 2:
+		collisionButtom(base);
+		break;
+	case 3:
+		collisionLeft();
+		break;
+	case 4:
+		collisionRight();
+		break;
+	default:
+		log("Illegal direction %d!", direction);
+		break;
 	}
-	if (ball->getPositionX() <= origin.x && preDirection.x < 0) {
-		if (degree < -90) {
-			preDirection.x = 1;
-			preDirection.y = tan(M_PI - angle);
-		}
-		else if (degree > 90) {
-			preDirection.x = 1;
-			preDirection.y = -tan(angle - M_PI);
-		}
-		moveBall(preDirection);
-	}
-	else if ((ball->getPositionX() >= origin.x + visible.width) && preDirection.x > 0) {
-		if (degree < 0 && degree > -90) {
-			preDirection.x = -1;
-			preDirection.y = tan(angle);
-		}
-		if (degree > 0 && degree < 90)
-		{
-			preDirection.x = -1;
-			preDirection.y = -tan(2 * M_PI - angle);
-		}
-		moveBall(preDirection);
-	}
-	else if ((ball->getPositionY() >= origin.y + visible.height) && preDirection.y > 0) {
-		if (degree > -90) {
-			preDirection.x = 1;
-			preDirection.y = -tan(angle);
-		}
-		else if (degree < -90) {
-			preDirection.x = -1;
-			preDirection.y = -tan(M_PI - angle);
-		}
-		else {
-			preDirection.x = 0;
-			preDirection.y = -1;
-		}
-		moveBall(preDirection);
-	}
-
 }
 
 void GameScene::update(float time) {
@@ -214,9 +274,10 @@ void GameScene::update(float time) {
 	if (!isStart) {
 		return;
 	}
+	curFlashCount++;
 	//首先监测球是否和底盘接触
 	if (ball->boundingBox().intersectsRect(bottom->boundingBox())) {
-		changeDirection(true);
+		changeDirection(2, true);
 		return;
 	}
 	if (ball->getPositionY() <= origin.y) 
@@ -227,28 +288,59 @@ void GameScene::update(float time) {
 	}
 
 	//球碰撞到墙壁
-	if (ball->getPositionX() <= origin.x || ball->getPositionX() >= origin.x + visible.width
-		|| ball->getPositionY() >= origin.y + visible.height) {
-		//ball->stopAllActions();
-		changeDirection(false);
+	if (ball->getPositionX() <= origin.x && preDirection.x < 0) {
+		changeDirection(3, false);
+	}
+	else if (ball->getPositionX() >= origin.x + visible.width && preDirection.x > 0) {
+		changeDirection(4, false);
+	}
+	else if (ball->getPositionY() >= origin.y + visible.height && preDirection.y > 0) {
+		changeDirection(1, false);
 	}
 
+	int count = 0;
 	//每一帧监测是否碰撞到砖块
 	for (int i = 0; i < bricks.size(); i++) {
 		auto vec = bricks.at(i);
 		for (int j = 0; j < vec.size(); j++) {
 			auto brick = vec.at(j);
 			if (brick->isVisible() && brick->getOpacity() == 255) {
-				if (ball->boundingBox().intersectsRect(brick->boundingBox())) {
-					brick->runAction(Sequence::create(FadeOut::create(0.5f), [=] {brick->setVisible(false); totalBrick--; }, NULL));
-					
+				Rect bottomEdge = Rect(brick->getPositionX(), brick->getPositionY() - brick->getContentSize().height + 1,
+					brick->getContentSize().width, 1);
+				Rect topEdge = Rect(brick->getPositionX(), brick->getPositionY(),
+					brick->getContentSize().width, 1);
+				Rect leftEdge = Rect(brick->getPositionX(), brick->getPositionY() - brick->getContentSize().height + 1,
+					1, brick->getContentSize().height);
+				Rect rightEdge = Rect(brick->getPositionX() + brick->getContentSize().width - 1, brick->getPositionY() - brick->getContentSize().height + 1,
+					1, brick->getContentSize().height);
+				if (ball->boundingBox().intersectsRect(topEdge) && preDirection.y < 0) {
+					changeDirection(2, false);
+					brick->runAction(Sequence::create(FadeOut::create(0.5f), [=] {brick->setVisible(false);}, NULL));
+					ballSpeed += ACC_SPEED;
 				}
+				else if (ball->boundingBox().intersectsRect(bottomEdge) && preDirection.y > 0) {
+					changeDirection(1, false);
+					brick->runAction(Sequence::create(FadeOut::create(0.5f), [=] {brick->setVisible(false);}, NULL));
+					ballSpeed += ACC_SPEED;
+				}
+				else if (ball->boundingBox().intersectsRect(leftEdge) && preDirection.x > 0) {
+					changeDirection(4, false);
+					brick->runAction(Sequence::create(FadeOut::create(0.5f), [=] {brick->setVisible(false);}, NULL));
+					ballSpeed += ACC_SPEED;
+				}
+				else if (ball->boundingBox().intersectsRect(rightEdge) && preDirection.x < 0) {
+					changeDirection(3, false);
+					brick->runAction(Sequence::create(FadeOut::create(0.5f), [=] {brick->setVisible(false);}, NULL));
+					ballSpeed += ACC_SPEED;
+				}
+			}
+			else {
+				count++;
 			}
 		}
 	}
-	if (totalBrick == 0)
+	if (count >= totalBrick)
 	{
-		//unscheduleUpdate();
 		initGame();
 	}
 }
