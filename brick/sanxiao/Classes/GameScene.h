@@ -9,15 +9,18 @@ public:
 	static Scene* createScene();
 	virtual bool init();
 	virtual void onEnterTransitionDidFinish();
+	void restartGame(Ref* ref);
 	void initFruit();
 	void download();
 	bool judgeAll();
-	bool judgeInPosition(int row, int col, GameLine *);
+	int judgeInPosition(int row, int col);
 
 
 	CREATE_FUNC(GameScene);
 
 private:
+
+	int flashCount;
 	Size visible;
 	Point origin;
 

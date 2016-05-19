@@ -11,5 +11,6 @@ public:
 	CC_SYNTHESIZE(int, row, Row);
 	CC_SYNTHESIZE(int, col, Col);
 	CC_SYNTHESIZE(int, type, Type);
+	CC_SYNTHESIZE(bool, legal, Legal);
 
 };

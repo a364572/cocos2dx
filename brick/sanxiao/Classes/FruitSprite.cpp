@@ -11,6 +11,8 @@ FruitSprite* FruitSprite::create(int row, int col, int type) {
 	auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(nameArray[type]);
 	sprite->setType(type);
 	sprite->initWithSpriteFrame(frame);
+	sprite->setLegal(true);
+	sprite->setAnchorPoint(Vec2(0, 0));
 	sprite->autorelease();
 
 	return sprite;
