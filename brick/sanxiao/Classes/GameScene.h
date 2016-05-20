@@ -12,23 +12,29 @@ public:
 	void restartGame(Ref* ref);
 	void initFruit();
 	void download();
+	float swapPosition(FruitSprite*, FruitSprite*);
 	bool judgeAll();
 	int judgeInPosition(int row, int col);
 
+	bool onTouchBegan(Touch *touch, Event *unused_event);
+	void onTouchMoved(Touch *touch, Event *unused_event);
+	void onTouchEnded(Touch *touch, Event *unused_event);
+	FruitSprite *getSpriteFromPosition(Point);
 
-	CREATE_FUNC(GameScene);
 
-private:
-
-	int flashCount;
 	Size visible;
 	Point origin;
 
-	vector<Vector<FruitSprite *>> fruits;
-};
+	CREATE_FUNC(GameScene);
 
-class GameLine {
-public:
-	int direction;
-	int length;
+
+
+private:
+	int reference;
+	int flashCount;
+	bool isDown;
+	FruitSprite *preFruit;
+	EventListenerTouchOneByOne *listener;
+
+	vector<Vector<FruitSprite *>> fruits;
 };
