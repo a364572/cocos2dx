@@ -4,9 +4,11 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 	auto monster = new Monster();
 	monster->currentIndex = 0;
 	//monster->initWithSpriteFrameName(name);
-	monster->initWithFile(name);
+	monster->initWithFile(name, Rect(5, 5, 40, 30));
 	monster->setSpeed(speed);
 	monster->setBlood(blood);
+	monster->setIsDead(false);
+	monster->setOpacity(255);
 	monster->autorelease();
 
 	for (size_t i = 0; i < nodes.size(); i++)

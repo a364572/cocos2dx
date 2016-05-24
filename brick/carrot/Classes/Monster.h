@@ -10,6 +10,7 @@ public:
 	CC_SYNTHESIZE(float, speed, Speed);
 	CC_SYNTHESIZE(float, blood, Blood);
 	CC_SYNTHESIZE(int, currentIndex, CurrentIndex);
+	CC_SYNTHESIZE(bool, isDead, IsDead);
 private:
 	Vector<Node *> path;
 };

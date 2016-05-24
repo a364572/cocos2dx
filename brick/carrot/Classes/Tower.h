@@ -14,7 +14,9 @@ public:
 	virtual void shootBullet() = 0;
 	virtual void setRotation(float rotation) = 0;
 	virtual float getRotation() = 0;
-	AbstractTower();
+
+	static AbstractTower* createTowerByString(std::string name);
+	CC_SYNTHESIZE(std::string, towerName, TowerName);
 	CC_SYNTHESIZE(std::string, bulletName, BulletName);
 	CC_SYNTHESIZE(float, range, Range);
 	CC_SYNTHESIZE(float, harm, Harm);
