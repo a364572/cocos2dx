@@ -11,9 +11,13 @@ public:
 	int flashCount = 0;
 	float BULLET_INTERVAL;
 	float BULLET_SPEED;
+	float bullet_direction;
+	bool canShoot;
+	
+	Point getVectorOfTowerBase();
 	virtual void shootBullet() = 0;
-	virtual void setRotation(float rotation) = 0;
-	virtual float getRotation() = 0;
+	//virtual void setRotation(float rotation) = 0;
+	//virtual float getRotation() = 0;
 
 	static AbstractTower* createTowerByString(std::string name);
 	CC_SYNTHESIZE(std::string, towerName, TowerName);
@@ -21,7 +25,6 @@ public:
 	CC_SYNTHESIZE(float, range, Range);
 	CC_SYNTHESIZE(float, harm, Harm);
 private:
-
 };
 
 /************************************************************************/
@@ -36,6 +39,14 @@ public:
 	virtual void setRotation(float rotation);
 	virtual float getRotation();
 	virtual void update(float dt);
-	float getNewRotation();
 };
 
+
+
+class FanTower : public AbstractTower {
+public:
+	Vector<Sprite *> bullets;
+	static AbstractTower* create();
+	virtual void shootBullet();
+	virtual void update(float delta);
+};

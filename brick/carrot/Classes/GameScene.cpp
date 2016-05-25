@@ -38,15 +38,15 @@ bool GameScene::init()
 	auto bg = tmx->getLayer("background");
 	tmx->setAnchorPoint(Vec2(0.5, 0.5));
 	tmx->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
-	//offX = (visible.width - tmx->getContentSize().width) / 2;
-	offX = 0;
+	offX = (visible.width - tmx->getContentSize().width) / 2;
+	//offX = 0;
 	addChild(tmx);
 	auto obj = tmx->getObjectGroup("points");
 	auto point = obj->getObject(std::to_string(val));
 	auto ite = point.begin();
 	while (point.begin() != point.end())
 	{
-		auto x = point.at("x").asFloat() + offX;
+		auto x = point.at("x").asFloat();
 		auto y = point.at("y").asFloat();
 		auto node = Node::create();
 		node->setPosition(x, y);
@@ -73,7 +73,7 @@ bool GameScene::init()
 		mapFlag.push_back(tmp);
 	}
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("monster.plist", "monster.png");
-	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("TBottle-hd.plist", "TBottle-hd.png");
+	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("fan.plist", "fan.png");
 	monsterInterval = 2;
 	flashCount = 0;
 
@@ -88,7 +88,7 @@ bool GameScene::init()
 	float layerWidth = 0, layerHeight = 0, marginRate = 1.2;
 
 	towerAvailiable = LayerColor::create(Color4B(178, 95, 27, 120));
-	towerAvailiable->setAnchorPoint(Vec2(0.5, 0.5));
+	//towerAvailiable->setAnchorPoint(Vec2(0.5, 0.5));
 
 	auto tower = BottleTower::create();
 	layerHeight = tower->getContentSize().height * marginRate;
@@ -97,7 +97,7 @@ bool GameScene::init()
 	towerAvailiable->addChild(tower);
 	layerWidth += tower->getContentSize().width * marginRate;
 
-	tower = BottleTower::create();
+	tower = FanTower::create();
 	tower->setAnchorPoint(Vec2(0.5, 0.5));
 	tower->setPosition(layerWidth + tower->getContentSize().width * marginRate / 2, layerHeight / 2);
 	towerAvailiable->addChild(tower);
@@ -118,7 +118,7 @@ void GameScene::update(float dt)
 	if (Director::getInstance()->getAnimationInterval() * flashCount >= monsterInterval)
 	{
 		flashCount = 0;
-		auto monster = Monster::create("f-5.png", 50, 50, positions);
+		auto monster = Monster::create("monster.png", 100, 80, positions);
 		gameManager->monsters.pushBack(monster);
 		monster->forwad();
 		tmx->addChild(monster, 1);
@@ -128,7 +128,9 @@ void GameScene::update(float dt)
 	{
 		//旋转炮台
 		auto tower = towers.at(j);
-		tower->setRotation(tower->getRotation() + 2);
+		auto degree = tower->getRotation();
+			degree = degree + 2 > 180 ? degree - 360 : degree + 2;
+			//tower->setRotation(degree);
 	}
 
 	//检查怪兽是否出界或是死亡
@@ -145,7 +147,7 @@ void GameScene::update(float dt)
 		if (monster->getBlood() <= 0)
 		{
 			(gameManager->monsters).erase(i);
-			monster->runAction(Sequence::create(FadeOut::create(1.5f), CallFunc::create([=] {monster->removeFromParentAndCleanup(true); }), NULL));
+			monster->runAction(FadeOut::create(0.3f));
 			i--;
 		}
 	}
@@ -155,15 +157,24 @@ void GameScene::update(float dt)
 bool GameScene::onTouchBegan(Touch *touch, Event *unused_event)
 {
 	Point coorPoint = touch->getLocation();
+	coorPoint.x = coorPoint.x - offX;
+	if (coorPoint.x <= 0 || coorPoint.x >= tmx->getContentSize().width)
+	{
+		return false;
+	}
 	Point tiledPos = openglToTiledCoord(coorPoint);
+	log("x:%f y:%f", tiledPos.x, tiledPos.y);
 	if (towerAvailiable->isVisible())
 	{
+		coorPoint.x = coorPoint.x + offX;
 		tryAddTower(coorPoint, tiledPos);
 		towerAvailiable->setVisible(false);
 		return false;
 	}
 
-	if (tiledPos.x < mapFlag.size() && tiledPos.y < mapFlag[0].size() && mapFlag[tiledPos.x][tiledPos.y] == 1)
+	if (tiledPos.x >= 0 && tiledPos.x < mapFlag.size() 
+		&& tiledPos.y >= 0 && tiledPos.y < mapFlag[0].size() 
+		&& mapFlag[tiledPos.x][tiledPos.y] == 1)
 	{
 		//默认在触摸点的上方显示
 		towerAvailiable->setPosition(coorPoint);
@@ -185,13 +196,21 @@ Point GameScene::openglToTiledCoord(Point position)
 {
 	Size mapSize = tmx->getMapSize();
 	Size tiledSize = tmx->getTileSize();
-	int x = position.x / tiledSize.width;
-	int y = (mapSize.height * tiledSize.height - position.y) / tiledSize.height;
+	float scaleFactor = visible.height / mapSize.height / tiledSize.height;
+	//log("Touch x:%f, y:%f", position.x, position.y);
+	//log("map x:%f y:%f", mapSize.width, mapSize.height);
+	//log("tile x:%f y:%f", tiledSize.width, tiledSize.height);
+	//log("scale x:%f y:%f", scaleFactor, scaleFactor);
+
+	int x = position.x / scaleFactor / tiledSize.width;
+	int y = (mapSize.height * tiledSize.height - position.y / scaleFactor) / tiledSize.height;
+
+	//log("x:%d y:%d", x, y);
 	return Point(x, y);
 }
 
 /************************************************************************/
-/* 根据不同的触摸位置显示                                               */
+/* 根据不同的触摸位置增加对应的炮台                                     */
 /************************************************************************/
 void GameScene::tryAddTower(Point coorPoint, Point tiledPoint)
 {
@@ -204,6 +223,9 @@ void GameScene::tryAddTower(Point coorPoint, Point tiledPoint)
 	for (Node *node : towerAvailiable->getChildren())
 	{
 		AbstractTower* tower = (AbstractTower*)node;
+		Rect rect = tower->getBoundingBox();
+		log("minX:%f minY:%f maxX:%f maxY:%f", rect.getMinX(), rect.getMinY(), rect.getMaxX(), rect.getMaxY());
+		log("local x:%f y:%f", localPoint.x, localPoint.y);
 		if (tower->getBoundingBox().containsPoint(localPoint))
 		{
 			auto newTower = AbstractTower::createTowerByString(tower->getTowerName());
@@ -211,6 +233,7 @@ void GameScene::tryAddTower(Point coorPoint, Point tiledPoint)
 			newTower->setPosition(location);
 			newTower->origin = Point(-location.x, -location.y);
 			newTower->visible = tmx->getContentSize();
+			//newTower->setRotation(-160);
 			tmx->addChild(newTower);
 			mapFlag[prePoint.x][prePoint.y] = 0;
 			towers.pushBack(newTower);
@@ -223,7 +246,8 @@ Point GameScene::tiledToOpenglCoord(Point position)
 {
 	Size mapSize = tmx->getMapSize();
 	Size tiledSize = tmx->getTileSize();
-	auto x = position.x * tiledSize.width + tiledSize.width / 2;
-	auto y = mapSize.height * tiledSize.height - (tiledSize.height * position.y + tiledSize.height / 2);
+	float scaleFactor = visible.height / mapSize.height / tiledSize.height;
+	auto x = (position.x * tiledSize.width + tiledSize.width / 2) * scaleFactor;
+	auto y = (mapSize.height * tiledSize.height - (tiledSize.height * position.y + tiledSize.height / 2)) * scaleFactor;
 	return Point(x, y);
 }

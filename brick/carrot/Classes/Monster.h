@@ -7,6 +7,8 @@ public:
 	void forwad();
 	float getRunTime();
 
+	Point direction;
+
 	CC_SYNTHESIZE(float, speed, Speed);
 	CC_SYNTHESIZE(float, blood, Blood);
 	CC_SYNTHESIZE(int, currentIndex, CurrentIndex);
