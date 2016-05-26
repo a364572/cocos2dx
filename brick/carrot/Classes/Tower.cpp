@@ -4,8 +4,9 @@
 AbstractTower* BottleTower::create()
 {
 	BottleTower* tower = new BottleTower();
-	tower->BULLET_INTERVAL = 0.5;
-	tower->BULLET_SPEED = 600;
+	tower->setColor(Color3B(199, 255, 34));
+	tower->BULLET_INTERVAL = 1;
+	tower->BULLET_SPEED = 200;
 	tower->canShoot = false;
 	tower->setRange(200);
 	tower->setHarm(20);
@@ -18,30 +19,21 @@ AbstractTower* BottleTower::create()
 	tower->towerBase->setAnchorPoint(Size(0.5, 0.5));
 	tower->setContentSize(tower->towerBase->getContentSize());
 	tower->addChild(tower->towerBase);
-	tower->autorelease();
-	log("Frame Size width:%f height:%f", tower->towerBase->getContentSize().width, tower->towerBase->getContentSize().height);
+	//tower->ignoreAnchorPointForPosition(false);
+	tower->setAnchorPoint(Vec2(0.5, 0.5));
+	tower->autorelease(); 
 	return tower;
 }
 
 void BottleTower::shootBullet() 
 {
-	//auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(this->getBulletName());
-	//auto bullet = Sprite::createWithSpriteFrame(frame);
 	auto bullet = Sprite::create(getBulletName());
 	bullet->setAnchorPoint(Vec2(0.5, 0.5));
-	//auto degree = towerBase->getRotation();
-	//auto rotation = CC_DEGREES_TO_RADIANS(-1 * degree);
-	bullet->setRotation(bullet_direction);
-
-	Vec2 vec = getVectorOfTowerBase();
-	vec.y = vec.y * 5;
-	vec.x = vec.x * 5;
-	bullet->setPosition(towerBase->getPosition() + vec);
-
-	vec.x = vec.x * 400;
-	vec.y = vec.y * 400;
+	bullet->setPosition(towerBase->getPosition() + bulletDirection * 5);
+	
+	bulletDirection = bulletDirection * 1000;
 	bullet->setOpacity(255);
-	bullet->runAction(Sequence::create(MoveBy::create(bullet->getPosition().distance(vec) / BULLET_SPEED, vec),
+	bullet->runAction(Sequence::create(MoveBy::create(bullet->getPosition().distance(bulletDirection) / BULLET_SPEED, bulletDirection),
 		CallFunc::create([=] {bullet->setOpacity(0); }),
 		NULL));
 	bullets.pushBack(bullet);
@@ -76,7 +68,7 @@ void BottleTower::update(float dt) {
 			{
 				auto monsterToTower = (point - towerBase->getPosition()).getNormalized();
 				auto monsterDirection = (monster->direction).getNormalized();
-				auto bulletDirection = monsterDirection * monster->getSpeed() + monsterToTower * BULLET_SPEED;
+				bulletDirection = (monsterDirection * monster->getSpeed() + monsterToTower * BULLET_SPEED).getNormalized();
 
 				auto degree = bulletDirection.getAngle();
 				degree = CC_RADIANS_TO_DEGREES(-1 * degree);
@@ -86,10 +78,7 @@ void BottleTower::update(float dt) {
 				//auto degree = vec.getAngle();
 				//degree = CC_RADIANS_TO_DEGREES(-1 * degree);
 				//auto angle = Vec2::angle(vec, towerBaseVec);
-				
-
 				towerBase->setRotation(degree);
-				this->bullet_direction = degree;
 				/*
 				if (angle < M_PI / 4)
 				{
@@ -173,45 +162,6 @@ void BottleTower::update(float dt) {
 	}
 }
 
-Point AbstractTower::getVectorOfTowerBase()
-{
-	auto degree = towerBase->getRotation();
-	auto rotation = CC_DEGREES_TO_RADIANS(-1 * degree);
-	Vec2 direction;
-	if (degree < -90)
-	{
-		direction.x = -1;
-		direction.y = tan(M_PI - rotation);
-	}
-	else if (degree == -90) {
-		direction.x = 0;
-		direction.y = 1;
-	}
-	else if (degree < 0) {
-		direction.x = 1;
-		direction.y = tan(rotation);
-	}
-	else if (degree == 0)
-	{
-		direction.x = 1;
-		direction.y = 0;
-	}
-	else if (degree < 90)
-	{
-		direction.x = 1;
-		direction.y = tan(rotation);
-	}
-	else if (degree == 90) {
-		direction.x = 0;
-		direction.y = -1;
-	}
-	else {
-		direction.x = -1;
-		direction.y = -tan(rotation);
-	}
-	return direction;
-}
-
 AbstractTower * AbstractTower::createTowerByString(std::string name)
 {
 	if (name == "Bottle")
@@ -229,40 +179,34 @@ AbstractTower * AbstractTower::createTowerByString(std::string name)
 AbstractTower* FanTower::create()
 {
 	auto tower = new FanTower();
+	tower->setColor(Color3B(255, 255, 255));
 	tower->BULLET_INTERVAL = 0.8;
 	tower->BULLET_SPEED = 200;
 	tower->canShoot = false;
 	tower->setRange(200);
 	tower->setHarm(20);
 	tower->setTowerName("Fan");
-	tower->setBulletName("Fan-bullet");
-
-	tower->towerBase = Sprite::create("FanTower.png");
-	tower->towerBase->setAnchorPoint(Size(0.5, 0.5));
-	Vector<SpriteFrame*> vec;
-	for (int i = 1; i <= 3; i++)
-	{
-		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(tower->getBulletName() + std::to_string(i) + ".png");
-		vec.pushBack(frame);
-	}
-	auto animation = Animation::createWithSpriteFrames(vec, 0.3f, -1);
-	auto animate = Animate::create(animation);
-	tower->towerBase->runAction(animate);
+	tower->setBulletName("Fan-bullet.png");
 
 	//风车的底盘
-	auto sprite = Sprite::create("Fan-bottom.png");
-	sprite->setAnchorPoint(Vec2(0.5, 0));
-	tower->setContentSize(Size(tower->towerBase->getContentSize().width, 
-		sprite->getContentSize().height + tower->towerBase->getContentSize().height));
-	sprite->setPosition(tower->getContentSize().width / 2, 0);
-	tower->addChild(sprite);
+	tower->fanBottom = Sprite::create("Fan-bottom.png");
+	tower->fanBottom->setAnchorPoint(Vec2(0.5, 0));
+	tower->setPositionY(0);
+	tower->addChild(tower->fanBottom);
 
-	//风车叶子
-	tower->towerBase->setAnchorPoint(Vec2(0.5, 0));
-	tower->towerBase->setPosition(tower->getContentSize().width / 2, sprite->getContentSize().height);
+	//风车叶子	
+	tower->towerBase = Sprite::create("FanTower.png");
+	tower->towerBase->setAnchorPoint(Vec2(0.5, 0.5));
+	tower->towerBase->setPosition(tower->towerBase->getContentSize().width / 2, tower->fanBottom->getContentSize().height);
 	tower->addChild(tower->towerBase);
+	tower->fanBottom->setPositionX(tower->towerBase->getContentSize().width / 2);
 
+	tower->setContentSize(Size(tower->towerBase->getContentSize().width,
+		tower->fanBottom->getContentSize().height + tower->towerBase->getContentSize().height / 2));
+	tower->ignoreAnchorPointForPosition(false);
+	tower->setAnchorPoint(Vec2(0.5, 0.5));
 	tower->autorelease();
+
 	return tower;
 }
 
@@ -276,19 +220,18 @@ void FanTower::update(float delta)
 		auto monster = monsters.at(i);
 		if (monster->getBlood() > 0)
 		{
-			Point point = convertToNodeSpace(monster->convertToWorldSpace(Vec2(0, 0)));
-			auto distance = point.distance(towerBase->getPosition());
-
+			//Point point = convertToNodeSpace(monster->convertToWorldSpace(Vec2(0, 0)));
+			//auto distance = point.distance(towerBase->getPosition());
+			Point monsterPoint = monster->convertToWorldSpace(Vec2(0, 0));
+			Point towerPoint = towerBase->convertToWorldSpace(Vec2(0, 0));
+			auto distance = monsterPoint.distance(towerPoint);
 			if (distance <= getRange())
 			{
-				auto monsterToTower = (point - towerBase->getPosition()).getNormalized();
+				//auto monsterToTower = (point - towerBase->getPosition()).getNormalized();
+				auto monsterToTower = (monsterPoint - towerPoint).getNormalized();
 				auto monsterDirection = (monster->direction).getNormalized();
-				auto bulletDirection = monsterDirection * monster->getSpeed() + monsterToTower * BULLET_SPEED;
-
-				auto degree = bulletDirection.getAngle();
-				degree = CC_RADIANS_TO_DEGREES(-1 * degree);
+				bulletDirection = (monsterDirection * monster->getSpeed() + monsterToTower * BULLET_SPEED).getNormalized();
 				canShoot = true;
-				bullet_direction = degree;
 				break;
 			}
 		}
@@ -303,16 +246,18 @@ void FanTower::update(float delta)
 	}
 
 	//检查子弹是否出界以及检查子弹和怪物是否碰撞 风扇的子弹会一直存在 直到出界
-
+	//为了防止一个子弹和同一个怪物多次碰撞，每个子弹要记录当前和哪些怪物已经碰撞了
+	
 	for (int i = 0; i < bullets.size(); i++)
 	{
-		auto bullet = bullets.at(i);
+		auto bullet = (FanBullet *)bullets.at(i);
 		if (bullet->getPositionX() - origin.x < 0 || bullet->getPositionX() - origin.x > visible.width ||
 			bullet->getPositionY() - origin.y < 0 || bullet->getPositionY() - origin.y > visible.height)
 		{
 			bullets.erase(i);
 			i--;
 			bullet->stopAllActions();
+			bullet->monsterArr.clear();
 			bullet->removeFromParentAndCleanup(true);
 			continue;
 		}
@@ -323,18 +268,59 @@ void FanTower::update(float delta)
 		for (int j = 0; j < monsters.size(); j++)
 		{
 			auto monster = monsters.at(j);
+			bool skip = false;
+			for (int k = 0; k < bullet->monsterArr.size(); k++)
+			{
+				if (monster == bullet->monsterArr.at(k))
+				{
+					skip = true;
+					break;
+				}
+			}
+			if (skip)
+			{
+				continue;
+			}
+			
 			Point point1 = monster->convertToWorldSpace(Vec2(0, 0));
 			Size size1 = monster->getContentSize();
 			Rect rect2(point1.x - size1.width / 2, point1.y - size1.height / 2, size1.width, size1.height);
 			if (rect1.intersectsRect(rect2))
 			{
 				monster->setBlood(monster->getBlood() - getHarm());
+				bullet->monsterArr.push_back(monster);
 				break;
 			}
 		}
 	}
+	
 }
 void FanTower::shootBullet()
 {
+	auto bullet = FanBullet::create();
+	bullet->setAnchorPoint(Vec2(0.5, 0.5));
+	bullet->setPosition(towerBase->getPosition());
+	bulletDirection = bulletDirection * 1000;
+	bullet->runAction(MoveBy::create(bullet->getPosition().distance(bulletDirection) / BULLET_SPEED, bulletDirection));
+	bullets.pushBack(bullet);
 
+	this->addChild(bullet);
+}
+
+FanBullet * FanBullet::create()
+{
+	FanBullet* bullet = new FanBullet();
+	bullet->initWithFile("Fan-bullet.png");
+	bullet->setBulletName("Fan");
+	Vector<SpriteFrame *> vec;
+	for (int i = 1; i <= 3; i++)
+	{
+		auto frame = SpriteFrameCache::getInstance()->getSpriteFrameByName(bullet->getBulletName() + std::to_string(i) + ".png");
+		vec.pushBack(frame);
+	}
+	auto animation = Animation::createWithSpriteFrames(vec, 0.2f, -1);
+	auto animate = Animate::create(animation);
+	bullet->runAction(animate);
+	bullet->autorelease();
+	return bullet;
 }

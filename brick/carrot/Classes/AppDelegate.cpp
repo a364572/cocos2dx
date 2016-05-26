@@ -77,7 +77,7 @@ bool AppDelegate::applicationDidFinishLaunching() {
     register_all_packages();
 
     // create a scene. it's an autorelease object
-    auto scene = GameScene::createScene("bg1.tmx");
+    auto scene = GameScene::createScene("bg2.tmx");
 
     // run
     director->runWithScene(scene);

@@ -1,5 +1,6 @@
 #pragma once
 #include "cocos2d.h"
+#include "Monster.h"
 USING_NS_CC;
 
 
@@ -8,13 +9,13 @@ public:
 	Sprite *towerBase;
 	Size visible;
 	Point origin;
+	Point bulletDirection;
 	int flashCount = 0;
 	float BULLET_INTERVAL;
 	float BULLET_SPEED;
-	float bullet_direction;
+
 	bool canShoot;
 	
-	Point getVectorOfTowerBase();
 	virtual void shootBullet() = 0;
 	//virtual void setRotation(float rotation) = 0;
 	//virtual float getRotation() = 0;
@@ -45,8 +46,16 @@ public:
 
 class FanTower : public AbstractTower {
 public:
+	Sprite *fanBottom;
 	Vector<Sprite *> bullets;
 	static AbstractTower* create();
 	virtual void shootBullet();
 	virtual void update(float delta);
+};
+
+class FanBullet : public Sprite {
+public:
+	static FanBullet* create();
+	std::vector<Monster *> monsterArr;
+	CC_SYNTHESIZE(std::string, bulletName, BulletName);
 };
