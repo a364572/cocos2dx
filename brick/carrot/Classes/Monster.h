@@ -8,6 +8,7 @@ public:
 	float getRunTime();
 
 	Point direction;
+	Sprite* bloodBar;
 
 	CC_SYNTHESIZE(float, speed, Speed);
 	CC_SYNTHESIZE(float, blood, Blood);

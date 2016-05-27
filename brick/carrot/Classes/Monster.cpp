@@ -3,7 +3,7 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 {
 	auto monster = new Monster();
 	monster->currentIndex = 0;
-	monster->initWithFile(name);
+	monster->initWithSpriteFrameName(name);
 	monster->setSpeed(speed);
 	monster->setBlood(blood);
 	monster->setIsDead(false);
@@ -15,6 +15,19 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 		monster->path.pushBack(nodes.at(i));
 	}
 	monster->setPosition(monster->path.at(0)->getPosition());
+
+	monster->bloodBar = Sprite::createWithSpriteFrameName("xuetiao_empty.png");
+	monster->bloodBar->setAnchorPoint(Vec2(0.5, 0));
+	monster->bloodBar->setPosition(monster->getContentSize().width / 2, monster->getContentSize().height);
+	//monster->addChild(monster->bloodBar);
+
+	auto progressBar = ProgressTimer::create(Sprite::createWithSpriteFrameName("xuetiao_full.png"));
+	progressBar->setType(ProgressTimer::Type::BAR);
+	progressBar->setMidpoint(Vec2(0, 0.5));
+	progressBar->setBarChangeRate(Vec2(1, 0));
+	progressBar->setPercentage(100);
+	progressBar->setPosition(monster->bloodBar->getContentSize().width / 2, monster->bloodBar->getContentSize().height / 2);
+	monster->bloodBar->addChild(progressBar);
 
 	
 	return monster;

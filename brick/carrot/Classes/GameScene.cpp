@@ -71,8 +71,7 @@ bool GameScene::init()
 		}
 		mapFlag.push_back(tmp);
 	}
-	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("monster.plist", "monster.png");
-	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("fan.plist", "fan.png");
+	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("element.plist", "element.png");
 	monsterInterval = 2;
 	flashCount = 0;
 
@@ -230,9 +229,12 @@ void GameScene::tryAddTower(Point coorPoint, Point tiledPoint)
 	for (Node *node : towerAvailiable->getChildren())
 	{
 		AbstractTower* tower = (AbstractTower*)node;
-		Rect rect = tower->getBoundingBox();
-		log("minX:%f minY:%f maxX:%f maxY:%f", rect.getMinX(), rect.getMinY(), rect.getMaxX(), rect.getMaxY());
-		if (tower->getBoundingBox().containsPoint(localPoint))
+		//Rect rect = tower->getBoundingBox();
+		Rect rect(0, 0, tower->getContentSize().width, tower->getContentSize().height);
+		localPoint = tower->convertToNodeSpace(coorPoint);
+		//log("minX:%f minY:%f maxX:%f maxY:%f", rect.getMinX(), rect.getMinY(), rect.getMaxX(), rect.getMaxY());
+		//if (tower->getBoundingBox().containsPoint(localPoint))
+		if (rect.containsPoint(localPoint))
 		{
 			auto newTower = AbstractTower::createTowerByString(tower->getTowerName());
 			Point location = tiledToOpenglCoord(prePoint);
@@ -240,7 +242,6 @@ void GameScene::tryAddTower(Point coorPoint, Point tiledPoint)
 			newTower->setPosition(location);
 			newTower->origin = Point(-location.x, -location.y);
 			newTower->visible = tmx->getContentSize();
-			//newTower->setRotation(-160);
 			tmx->addChild(newTower);
 			mapFlag[prePoint.x][prePoint.y] = 0;
 			towers.pushBack(newTower);
