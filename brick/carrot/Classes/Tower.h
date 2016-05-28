@@ -8,7 +8,7 @@ class AbstractBullet : public Sprite
 {
 public:
 
-	//virtual void checkCollision() = 0;						//检查与怪物是否碰撞
+	//virtual void checkCollision() = 0;					//检查与怪物是否碰撞
 	std::vector<Monster *> monsterArr;						//与当前子弹已经接触过的怪物列表
 	CC_SYNTHESIZE(bool, avaliable, Avaliable);				//判断子弹是否失效
 	CC_SYNTHESIZE(float, speed, Speed);						//子弹运动速度
@@ -33,6 +33,7 @@ public:
 	CC_SYNTHESIZE(float, range, Range);						//炮台攻击范围
 	CC_SYNTHESIZE(float, harm, Harm);						//每次的伤害
 	CC_SYNTHESIZE(float, bulletInterval, BulletInterval);	//子弹发射间隔
+	CC_SYNTHESIZE(float, bulletSpeed, BulletSpeed);
 	CC_SYNTHESIZE(Point, towerDirection, TowerDirection);	//该炮台可以旋转
 private:
 };
