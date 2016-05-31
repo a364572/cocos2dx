@@ -131,6 +131,7 @@ void BottleTower::update(float dt) {
 				continue;
 			}
 			monster->setBlood(monster->getBlood() - getHarm());
+			monster->progressBar->setPercentage(monster->getBlood() / monster->totalBlood * 100);
 			this->bulletArr.erase(i);
 			i--;
 			bullet->setAvaliable(false);
@@ -141,6 +142,17 @@ void BottleTower::update(float dt) {
 			break;
 			
 		}
+	}
+}
+
+void AbstractTower::destroyTower()
+{
+	for (int i = 0; i < bulletArr.size();)
+	{
+		bulletArr.at(i)->monsterArr.clear();
+		bulletArr.at(i)->stopAllActions();
+		bulletArr.at(i)->removeFromParentAndCleanup(true);
+		bulletArr.erase(i);
 	}
 }
 
@@ -271,6 +283,7 @@ void FanTower::update(float delta)
 				continue;
 			}
 			monster->setBlood(monster->getBlood() - getHarm());
+			monster->progressBar->setPercentage(monster->getBlood() / monster->totalBlood * 100);
 			bullet->monsterArr.push_back(monster);
 			break;
 		}

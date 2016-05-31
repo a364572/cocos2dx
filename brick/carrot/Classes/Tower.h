@@ -25,6 +25,7 @@ public:
 	Vector<AbstractBullet *> bulletArr;						//发射的子弹列表						
 	
 	virtual void shootBullet() = 0;
+	void destroyTower();
 
 	static AbstractTower* createTowerByString(std::string name);
 	CC_SYNTHESIZE(std::string, towerName, TowerName);		//炮台名称

@@ -17,6 +17,7 @@ public:
 	GameScene(std::string);
 	GameScene();
 
+	void initResource(Ref *ref);
 	void tryAddTower(Point coorPoint, Point tiledPoint);
 	Point tiledToOpenglCoord(Point position);
 	Point openglToTiledCoord(Point position);

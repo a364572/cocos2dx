@@ -1,8 +1,6 @@
 #include "HelloWorldScene.h"
 #include "SimpleAudioEngine.h"
 
-USING_NS_CC;
-
 Scene* HelloWorld::createScene()
 {
     // 'scene' is an autorelease object
@@ -73,6 +71,17 @@ bool HelloWorld::init()
     // add the sprite as a child to this layer
     this->addChild(sprite, 0);
     
+	auto tableView = TableView::create(this, Size(100, 600));
+	tableView->setDirection(ScrollView::Direction::VERTICAL);
+	tableView->setPosition(0, 0);
+	tableView->setDelegate(this);
+	tableView->setVerticalFillOrder(TableView::VerticalFillOrder::TOP_DOWN);
+	//addChild(tableView);
+	tableView->reloadData();
+	sprite = Sprite::create("Fan2.png");
+	sprite->setPosition(200, 0);
+	sprite->runAction(Sequence::create(DelayTime::create(1.0f), JumpBy::create(5.0f, Point(0, 600), -150, 6), nullptr));
+	addChild(sprite);
     return true;
 }
 
@@ -84,4 +93,37 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif
+}
+
+void HelloWorld::tableCellTouched(TableView* table, TableViewCell* cell)
+{
+	log("Touch at index %d", cell->getIdx());
+}
+
+TableViewCell* HelloWorld::tableCellAtIndex(TableView *table, ssize_t idx)
+{
+	static int oldCount = 0;
+	static int newCount = 0;
+	auto cell = table->dequeueCell();
+	if (!cell)
+	{
+		cell = TableViewCell::create();
+		auto sprite = Sprite::create("Fan2.png");
+		sprite->setAnchorPoint(Vec2::ZERO);
+		sprite->setPosition(0, 0);
+		auto label = LabelTTF::create("test", "fonts/arial.ttf", 10);
+		label->setAnchorPoint(Vec2::ZERO);
+		label->setPosition(0, 0);
+		label->setTag(100);
+		cell->addChild(label);
+		cell->addChild(sprite);
+		newCount++;
+		log("old %d new %d", oldCount, newCount);
+		return cell;
+	}
+	auto label = (LabelTTF *)cell->getChildByTag(100);
+	label->setString(label->getString() + "1");
+	oldCount++;
+	log("old %d new %d", oldCount, newCount);
+	return cell;
 }

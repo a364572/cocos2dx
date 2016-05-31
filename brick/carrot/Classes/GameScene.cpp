@@ -33,14 +33,14 @@ bool GameScene::init()
 	}
 	visible = Director::getInstance()->getVisibleSize();
 	origin = Director::getInstance()->getVisibleOrigin();
-	int val = 1;
 	tmx = TMXTiledMap::create(sceneName);
 	auto bg = tmx->getLayer("background");
 	tmx->setAnchorPoint(Vec2(0.5, 0.5));
 	tmx->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 	offX = (visible.width - tmx->getContentSize().width) / 2;
-	//offX = 0;
 	addChild(tmx);
+
+	int val = 1;
 	auto obj = tmx->getObjectGroup("points");
 	auto point = obj->getObject(std::to_string(val));
 	while (point.begin() != point.end())
@@ -53,24 +53,8 @@ bool GameScene::init()
 		val++;
 		point = obj->getObject(std::to_string(val));
 	}
-	Size mapSize = tmx->getMapSize();
-	for (int i = 0; i < mapSize.width; i++)
-	{
-		std::vector<int> tmp;
-		for (int j = 0; j < mapSize.height; j++)
-		{
-			int gid = tmx->getLayer("background")->getTileGIDAt(Point(i, j));
-			auto map = tmx->getPropertiesForGID(gid).asValueMap();
-			if (map.at("canTouch").asInt() == 1)
-			{
-				tmp.push_back(1);
-			}
-			else {
-				tmp.push_back(0);
-			}
-		}
-		mapFlag.push_back(tmp);
-	}
+	initResource(NULL);
+
 	SpriteFrameCache::getInstance()->addSpriteFramesWithFile("element.plist", "element.png");
 	monsterInterval = 2;
 	flashCount = 0;
@@ -110,10 +94,69 @@ bool GameScene::init()
 	towerAvailiable->ignoreAnchorPointForPosition(false);
 	tmx->addChild(towerAvailiable);
 
+	//创建重新开始按钮
+	auto label = Label::create("Restart", "fonts/Marker Felt.ttf", 30);
+	auto menuItem = MenuItemLabel::create(label, CC_CALLBACK_1(GameScene::initResource, this));
+	auto menu = Menu::create(menuItem, NULL);
+	menu->setContentSize(menuItem->getContentSize());
+	menu->setAnchorPoint(Vec2(0, 1));
+	menu->setPosition(tmx->getContentSize().width / 2, tmx->getContentSize().height - menu->getContentSize().height);
+	menu->alignItemsVertically();
+	tmx->addChild(menu);
 	gameManager = GameManager::getInstance();
 	scheduleUpdate();
+	log("Visible x:%f y:%f", visible.width, visible.height);
+	log("Win x:%f y:%f", Director::getInstance()->getWinSize().width, Director::getInstance()->getWinSize().height);
+	log("Frame x:%f y:%f", Director::getInstance()->getOpenGLView()->getFrameSize().width, Director::getInstance()->getOpenGLView()->getFrameSize().height);
+	log("Origin x:%f y:%f", origin.x, origin.y);
+	auto sprite = Sprite::create("Fan2.png");
+	log("Size1 x:%f y:%f", sprite->getContentSize().width, sprite->getContentSize().height);
+	sprite = Sprite::create("Fan2.png", Rect(0, 0, 20, 10));
+	log("Size2 x:%f y:%f", sprite->getContentSize().width, sprite->getContentSize().height);
 }
 
+void GameScene::initResource(Ref *ref)
+{
+
+	for (auto array :mapFlag)
+	{
+		array.clear();
+	}
+	mapFlag.clear();
+
+	Size mapSize = tmx->getMapSize();
+	for (int i = 0; i < mapSize.width; i++)
+	{
+		std::vector<int> tmp;
+		for (int j = 0; j < mapSize.height; j++)
+		{
+			int gid = tmx->getLayer("background")->getTileGIDAt(Point(i, j));
+			auto map = tmx->getPropertiesForGID(gid).asValueMap();
+			if (map.at("canTouch").asInt() == 1)
+			{
+				tmp.push_back(1);
+			}
+			else {
+				tmp.push_back(0);
+			}
+		}
+		mapFlag.push_back(tmp);
+	}
+	auto monsters = GameManager::getInstance()->monsters;
+	for (int i = 0; i < monsters.size(); i++)
+	{
+		monsters.at(i)->stopAllActions();
+		monsters.at(i)->removeFromParentAndCleanup(true);
+	}
+	monsters.clear();
+	for (int i = 0; i < towers.size(); i++)
+	{
+		towers.at(i)->stopAllActions();
+		towers.at(i)->destroyTower();
+		towers.at(i)->removeFromParentAndCleanup(true);
+	}
+	towers.clear();
+}
 void GameScene::update(float dt)
 {
 	//判断是否要新加怪物
@@ -140,18 +183,17 @@ void GameScene::update(float dt)
 	for (int i = 0; i < gameManager->monsters.size(); i++)
 	{
 		auto monster = (gameManager->monsters).at(i);
-		if (monster->getCurrentIndex() == positions.size() || monster->getOpacity() == 0)
+		if (monster->getCurrentIndex() == positions.size() || monster->getOpacity() <= 1)
 		{
 			gameManager->monsters.erase(i);
 			i--;
+			monster->stopAllActions();
 			monster->removeFromParentAndCleanup(true);
 			continue;
 		}
 		if (monster->getBlood() <= 0)
 		{
-			(gameManager->monsters).erase(i);
-			monster->runAction(FadeOut::create(0.3f));
-			i--;
+			monster->runAction(Sequence::create(FadeOut::create(0.3f), NULL));
 		}
 	}
 

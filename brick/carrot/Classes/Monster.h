@@ -7,8 +7,10 @@ public:
 	void forwad();
 	float getRunTime();
 
+	float totalBlood;
 	Point direction;
 	Sprite* bloodBar;
+	ProgressTimer* progressBar;
 
 	CC_SYNTHESIZE(float, speed, Speed);
 	CC_SYNTHESIZE(float, blood, Blood);

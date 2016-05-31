@@ -3,6 +3,7 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 {
 	auto monster = new Monster();
 	monster->currentIndex = 0;
+	monster->totalBlood = blood;
 	monster->initWithSpriteFrameName(name);
 	monster->setSpeed(speed);
 	monster->setBlood(blood);
@@ -10,6 +11,7 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 	monster->setOpacity(255);
 	monster->autorelease();
 	monster->setAnchorPoint(Vec2(0.5, 0.5));
+	monster->setCascadeOpacityEnabled(true);
 	for (size_t i = 0; i < nodes.size(); i++)
 	{
 		monster->path.pushBack(nodes.at(i));
@@ -19,15 +21,15 @@ Monster *Monster::create(std::string name, float speed, float blood, Vector<Node
 	monster->bloodBar = Sprite::createWithSpriteFrameName("xuetiao_empty.png");
 	monster->bloodBar->setAnchorPoint(Vec2(0.5, 0));
 	monster->bloodBar->setPosition(monster->getContentSize().width / 2, monster->getContentSize().height);
-	//monster->addChild(monster->bloodBar);
+	monster->addChild(monster->bloodBar);
 
-	auto progressBar = ProgressTimer::create(Sprite::createWithSpriteFrameName("xuetiao_full.png"));
-	progressBar->setType(ProgressTimer::Type::BAR);
-	progressBar->setMidpoint(Vec2(0, 0.5));
-	progressBar->setBarChangeRate(Vec2(1, 0));
-	progressBar->setPercentage(100);
-	progressBar->setPosition(monster->bloodBar->getContentSize().width / 2, monster->bloodBar->getContentSize().height / 2);
-	monster->bloodBar->addChild(progressBar);
+	monster->progressBar = ProgressTimer::create(Sprite::createWithSpriteFrameName("xuetiao_full.png"));
+	monster->progressBar->setType(ProgressTimer::Type::BAR);
+	monster->progressBar->setMidpoint(Vec2(0, 0.5));
+	monster->progressBar->setBarChangeRate(Vec2(1, 0));
+	monster->progressBar->setPercentage(100);
+	monster->progressBar->setPosition(monster->bloodBar->getContentSize().width / 2, monster->bloodBar->getContentSize().height / 2);
+	monster->bloodBar->addChild(monster->progressBar);
 
 	
 	return monster;

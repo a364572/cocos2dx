@@ -68,5 +68,5 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
 
 void HelloWorld::startClicked(Ref* pSender) {
 	Scene *scene = MainScene::createScene();
-	Director::sharedDirector()->replaceScene(TransitionFadeDown::create(1, scene));
+	Director::sharedDirector()->replaceScene(TransitionCrossFade::create(1, scene));
 }
