@@ -1,5 +1,6 @@
 #pragma once
 #include "cocos2d.h"
+#include "PokerCard.h"
 USING_NS_CC;
 
 //甲板场景用来出牌
@@ -11,13 +12,19 @@ public:
 
 	void initDeck();
 	void preload(float);
+	void startGame();
+	void exitGame();
+	void displaySetting();
 	CREATE_FUNC(DeckScene);
+
+	CC_SYNTHESIZE(Vector<PokerCard *>, cardArray, CardArray);
 protected:
 private:
-	Vector<Sprite *> cards;		//存储所有的牌
 	Sprite* progress;
 	ProgressTimer* progressBar;
 	Label* loadLabel;
 	Size visible;
 	Point origin;
+	float blackVertical;
+	float blackHorizon;
 };
