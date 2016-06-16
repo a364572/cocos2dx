@@ -1,6 +1,7 @@
 #pragma once
 #include "cocos2d.h"
 #include "PokerCard.h"
+#include "Player.h"
 USING_NS_CC;
 
 //甲板场景用来出牌
@@ -14,6 +15,8 @@ public:
 	void preload(float);
 	void startGame();
 	void exitGame();
+	void outCard(int flag);
+	void callDiZhu(int flag);
 	void displaySetting();
 	CREATE_FUNC(DeckScene);
 
@@ -27,4 +30,12 @@ private:
 	Point origin;
 	float blackVertical;
 	float blackHorizon;
+	Menu* readyMenu;
+	Menu* callMenu;
+	Menu* robMenu;
+	Menu* outCardMenu;
+	Player* player;			//myself
+	Player* player1;		//player in the left
+	Player* player2;		//player in the right
+	bool isInGame;			//whether the game is running
 };

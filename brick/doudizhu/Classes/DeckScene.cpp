@@ -52,6 +52,12 @@ bool DeckScene::init()
 	loadLabel->setAnchorPoint(Vec2(0.5, 0.5));
 	loadLabel->setPosition(progress->getPosition() + Vec2(0, 50));
 	addChild(loadLabel);
+
+	readyMenu = nullptr;
+	callMenu = nullptr;
+	robMenu = nullptr;
+	outCardMenu = nullptr;
+	isInGame = false;
 	schedule(schedule_selector(DeckScene::preload));
 	return true;
 }
@@ -76,13 +82,8 @@ void DeckScene::initDeck()
 			col = 0;
 		}
 		card->setPosition(col * card->getContentSize().width, row * card->getContentSize().height);
-		addChild(card);
+		//addChild(card);
 		col++;
-	}
-	for (int i = 0; i < 54; i++)
-	{
-		auto card = cardArray.at(i);
-		//card->runAction(FadeOut::create(i + 1));
 	}
 
 	float margin_top = 50 + blackVertical;
@@ -98,9 +99,10 @@ void DeckScene::initDeck()
 	playerBackGray2->setPosition(0, 0);
 	playerBackGray2->setAnchorPoint(Vec2(0, 0));
 
-	auto player = Sprite::create("logo_unknown.png");
-	auto player1 = Sprite::create("logo_unknown.png");
-	auto player2 = Sprite::create("logo_unknown.png");
+	//initiate the player with the unknown photo
+	player = Player::create("Myself");
+	player1 = Player::create("Player1");
+	player2 = Player::create("Player2");
 
 	player->addChild(playerBackGold);
 	player1->addChild(playerBackGray1);
@@ -155,8 +157,15 @@ void DeckScene::initDeck()
 	addChild(pokerBack4);
 	addChild(pokerBack5);
 
-	auto readyBtn = MenuItemImage::create("big_green_btn.png", "big_green_btn_down.png", CC_CALLBACK_0(DeckScene::startGame, this));
-	auto readyMenu = Menu::create(readyBtn, nullptr);
+	if (readyMenu == nullptr) {
+		auto readyBtn = MenuItemImage::create("big_green_btn.png", "big_green_btn_down.png", CC_CALLBACK_0(DeckScene::startGame, this));
+		readyMenu = Menu::create(readyBtn, nullptr);
+		readyMenu->alignItemsVertically();
+		readyMenu->setAnchorPoint(Vec2(0.5, 0.5));
+		readyMenu->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
+		addChild(readyMenu);
+	}
+	readyMenu->setVisible(true);
 
 
 	//auto readyMenu =
@@ -195,10 +204,124 @@ void DeckScene::preload(float dt)
 
 void DeckScene::startGame()
 {
+	readyMenu->setVisible(false);
+	//initiate the outCard, callDiZhu, qiangDiZhu menu firstly
+	if (outCardMenu == nullptr)
+	{
+		auto outCardItem = MenuItemImage::create("play_green_btn.png", "play_green_btn_down.png", CC_CALLBACK_0(DeckScene::outCard, this, 1));
+		auto disableOutItem = MenuItemImage::create("no_red_btn.png", "no_red_btn_down.png", CC_CALLBACK_0(DeckScene::outCard, this, 2));
+		outCardMenu = Menu::create(outCardItem, disableOutItem, nullptr);
+		outCardMenu->alignItemsHorizontallyWithPadding(20);
+		outCardMenu->setAnchorPoint(Vec2(0.5, 0.5));
+		outCardMenu->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
+		addChild(outCardMenu);
+	}
+	
+	outCardMenu->setVisible(false);
+	if (callMenu == nullptr)
+	{
+		auto callItem = MenuItemImage::create("message_jiao.png", "message_jiao.png", CC_CALLBACK_0(DeckScene::callDiZhu, this, 1));
+		auto noCallItem = MenuItemImage::create("message_bu.png", "message_bu.png", CC_CALLBACK_0(DeckScene::callDiZhu, this, 2));
+		callMenu = Menu::create(callItem, noCallItem, nullptr);
+		callMenu->alignItemsHorizontallyWithPadding(20);
+		callMenu->setAnchorPoint(Vec2(0.5, 0.5));
+		callMenu->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
+		addChild(callMenu);
+	}
+	callMenu->setVisible(false);
+	if (robMenu == nullptr)
+	{
+		auto robItem = MenuItemImage::create("message_qiang.png", "message_qiang.png", CC_CALLBACK_0(DeckScene::callDiZhu, this, 3));
+		auto noRobItem = MenuItemImage::create("message_buQiang.png", "message_buQiang.png", CC_CALLBACK_0(DeckScene::callDiZhu, this, 4));
+		robMenu = Menu::create(robItem , noRobItem, nullptr);
+		robMenu->alignItemsHorizontallyWithPadding(20);
+		robMenu->setAnchorPoint(Vec2(0.5, 0.5));
+		robMenu->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
+		addChild(robMenu);
+	}
+	robMenu->setVisible(false);
+
+	//shuffle the cards randomly and assign them to the player
+	std::vector<int> randCards;
+	for (int i = 0; i < 54; i++)
+	{
+		randCards.push_back(i);
+	}
+	random_shuffle(randCards.begin(), randCards.end());
+
+	player->setAttribute(0, 0, 0, randCards);
+	player1->setAttribute(1, 1, 1, randCards);
+	player2->setAttribute(1, 2, 2, randCards);
+
+	float shuffleTime = 3.0f;
+	float cardIntervalHorizontal = 30.0f;
+
+	//display the card of each player
+	for (int i = 0; i < player->getLeftCard().size(); i++)
+	{
+		int interval = i - player->getLeftCard().size() / 2;
+		float distance = cardIntervalHorizontal * interval;
+		//log("first:%d, second:%f, distance:%d", (i - player->getLeftCard().size() / 2), cardIntervalHorizontal, distance);
+		auto card = player->getLeftCard().at(i);
+		card->setPosition(origin.x + visible.width / 2, origin.y + 100);
+		if (i == player->getLeftCard().size() - 1)
+		{
+			card->runAction(Sequence::create(MoveBy::create(shuffleTime, Vec2(distance, 0)), 
+				CallFunc::create([=] 
+				{
+					callMenu->setVisible(true);
+				}), 
+				nullptr));
+		}
+		else
+		{
+			card->runAction(MoveBy::create(shuffleTime, Vec2(distance, 0)));
+		}
+		addChild(card);
+	}
 }
 
 void DeckScene::exitGame()
 {
+}
+
+void DeckScene::outCard(int flag)
+{
+}
+
+void DeckScene::callDiZhu(int flag)
+{
+	std::string file;
+	switch (flag) {
+	case 1:
+		callMenu->setVisible(false);
+		file = "message1.png";
+		break;
+	case 2:
+		callMenu->setVisible(false);
+		file = "message0.png";
+		break;
+	case 3:
+		robMenu->setVisible(false);
+		file = "message3.png";
+		break;
+	case 4:
+		robMenu->setVisible(false);
+		file = "message2.png";
+		break;
+	default:
+		return;
+	}
+	auto sprite = Sprite::create(file);
+	sprite->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
+	sprite->runAction(Sequence::create(DelayTime::create(1.0f), 
+		CallFunc::create([=] 
+		{
+			sprite->removeFromParentAndCleanup(true);
+		}),
+		nullptr));
+
+	addChild(sprite);
 }
 
 void DeckScene::displaySetting()

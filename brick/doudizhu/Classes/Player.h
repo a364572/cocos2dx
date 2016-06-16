@@ -5,11 +5,14 @@ USING_NS_CC;
 class Player : public Sprite 
 {
 public:
-	static Player* create();
+	static Player* create(std::string);
+
+	void setAttribute(int type, int roomPos, int index, std::vector<int> &);
+	CC_SYNTHESIZE(int, type, Type);
+	CC_SYNTHESIZE(int, roomPos, RoomPos);	//position in the room
+	CC_SYNTHESIZE(std::string, playerName, PlayerName);
+	CC_SYNTHESIZE(std::vector<PokerCard *>, leftCard, LeftCard);
+	CC_SYNTHESIZE(std::vector<PokerCard *>, outCard, OutCard);
 protected:
 private:
-	Vector<PokerCard *> leftCards;		//剩余的牌
-	Vector<PokerCard *> outCards;		//已出的牌
-	int position;						//在房间中的位置
-	std::string name;					//玩家名称
 };
