@@ -26,5 +26,9 @@ void Player::setAttribute(int type, int roomPos, int index, std::vector<int>& ca
 	}
 	setType(type);
 	setRoomPos(roomPos);
+}
+
+void Player::sortCard()
+{
 	sort(leftCard.begin(), leftCard.end(), cardCompare);
 }

@@ -35,7 +35,22 @@ void GameManager::initCard(Ref * ref)
 		auto card = PokerCard::create(SpriteFrame::createWithTexture(texture, rect));
 		card->setType(type);
 		card->setValueInAll(i);
-		card->setValueInType(i % 13 + 1);
+		int value = i % 13 + 1;
+		//set the value of card beyond three with its number
+		if (value > 2)
+		{
+			card->setValueInType(value);
+		}
+		//set the value of card 1 and card 2 as 14 and 15 respectively
+		else
+		{
+			card->setValueInType(value + 13);
+		}
+		//set the value of small queen and big queen as 16 and 16 respectively
+		if (i >= 52)
+		{
+			card->setValueInType(i % 13 + 16);
+		}
 		rawCardArray.pushBack(card);
 	}
 	log("Total Card : %d", rawCardArray.size());

@@ -127,11 +127,11 @@ void DeckScene::initDeck()
 	menu->setAnchorPoint(Vec2(0, 0.5));
 	menu->setPosition(player1->getPositionX() + player1->getContentSize().width + 150, player1->getPositionY() - player1->getContentSize().height / 2);
 
-	auto pokerBack1 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	auto pokerBack2 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	auto pokerBack3 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	auto pokerBack4 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	auto pokerBack5 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+	pokerBack1 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+	pokerBack2 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+	pokerBack3 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+	pokerBack4 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+	pokerBack5 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
 
 	pokerBack1->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
 	pokerBack2->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
@@ -167,8 +167,13 @@ void DeckScene::initDeck()
 	}
 	readyMenu->setVisible(true);
 
+	//touch listener
+	auto listen = EventListenerTouchOneByOne::create();
+	listen->onTouchBegan = CC_CALLBACK_2(DeckScene::onTouchBegan, this);
+	listen->onTouchMoved = CC_CALLBACK_2(DeckScene::onTouchMoved, this);
+	listen->onTouchEnded = CC_CALLBACK_2(DeckScene::onTouchEnded, this);
+	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
 
-	//auto readyMenu =
 //	menu->setColor(Color3B(172, 64, 90));
 //	log("Menu Size : %f %f", menu->getContentSize().width, menu->getContentSize().height);
 //	log("Menu AnchorPoint: %f %f", menu->getAnchorPoint().x, menu->getAnchorPoint().y);
@@ -242,7 +247,7 @@ void DeckScene::startGame()
 	robMenu->setVisible(false);
 
 	//shuffle the cards randomly and assign them to the player
-	std::vector<int> randCards;
+	randCards.clear();
 	for (int i = 0; i < 54; i++)
 	{
 		randCards.push_back(i);
@@ -253,18 +258,16 @@ void DeckScene::startGame()
 	player1->setAttribute(1, 1, 1, randCards);
 	player2->setAttribute(1, 2, 2, randCards);
 
-	float shuffleTime = 3.0f;
-	float cardIntervalHorizontal = 30.0f;
-
+	player->sortCard();
 	//display the card of each player
-	for (int i = 0; i < player->getLeftCard().size(); i++)
+	for (int i = 0; i < player->leftCard.size(); i++)
 	{
-		int interval = i - player->getLeftCard().size() / 2;
+		int interval = i - player->leftCard.size() / 2;
 		float distance = cardIntervalHorizontal * interval;
 		//log("first:%d, second:%f, distance:%d", (i - player->getLeftCard().size() / 2), cardIntervalHorizontal, distance);
-		auto card = player->getLeftCard().at(i);
+		auto card = player->leftCard.at(i);
 		card->setPosition(origin.x + visible.width / 2, origin.y + 100);
-		if (i == player->getLeftCard().size() - 1)
+		if (i == player->leftCard.size() - 1)
 		{
 			card->runAction(Sequence::create(MoveBy::create(shuffleTime, Vec2(distance, 0)), 
 				CallFunc::create([=] 
@@ -277,7 +280,8 @@ void DeckScene::startGame()
 		{
 			card->runAction(MoveBy::create(shuffleTime, Vec2(distance, 0)));
 		}
-		addChild(card);
+		//add the card in Sequence based on their value
+		addChild(card, 54 - card->getValueInAll());
 	}
 }
 
@@ -287,17 +291,62 @@ void DeckScene::exitGame()
 
 void DeckScene::outCard(int flag)
 {
+	std::vector<PokerCard *> selectCard;
+	for (auto card : player->leftCard)
+	{
+		if (card->isSelect())
+		{
+			selectCard.push_back(card);
+		}
+	}
+	PokerArray array(selectCard);
 }
 
 void DeckScene::callDiZhu(int flag)
 {
 	std::string file;
+	PokerCard* card1;
+	PokerCard* card2;
+	PokerCard* card3;
 	switch (flag) {
-	case 1:
+	case 1:								//call DiZhu
 		callMenu->setVisible(false);
 		file = "message1.png";
+		//assign the bottom cards to the player and display all the cards
+		card1 = GameManager::getInstance()->getRawCardArray().at(randCards.at(51));
+		card2 = GameManager::getInstance()->getRawCardArray().at(randCards.at(52));
+		card3 = GameManager::getInstance()->getRawCardArray().at(randCards.at(53));
+		log("Add before : %d", player->leftCard.size());
+		player->leftCard.push_back(card1);
+		player->leftCard.push_back(card2);
+		player->leftCard.push_back(card3);
+		log("Add after: %d", player->leftCard.size());
+		card1->setVisible(false);
+		card2->setVisible(false);
+		card3->setVisible(false);
+		addChild(card1, 54 - card1->getValueInAll());
+		addChild(card2, 54 - card2->getValueInAll());
+		addChild(card3, 54 - card3->getValueInAll());
+		flashCard();
+
+		bottomCard1 = Sprite::createWithSpriteFrame(card1->getSpriteFrame());
+		bottomCard2 = Sprite::createWithSpriteFrame(card2->getSpriteFrame());
+		bottomCard3 = Sprite::createWithSpriteFrame(card3->getSpriteFrame());
+		bottomCard1->setAnchorPoint(pokerBack1->getAnchorPoint());
+		bottomCard2->setAnchorPoint(pokerBack2->getAnchorPoint());
+		bottomCard3->setAnchorPoint(pokerBack3->getAnchorPoint());
+		bottomCard1->setPosition(pokerBack1->getPosition());
+		bottomCard2->setPosition(pokerBack2->getPosition());
+		bottomCard3->setPosition(pokerBack3->getPosition());
+		bottomCard1->setScale(pokerBack1->getScale());
+		bottomCard2->setScale(pokerBack2->getScale());
+		bottomCard3->setScale(pokerBack3->getScale());
+		addChild(bottomCard1);
+		addChild(bottomCard2);
+		addChild(bottomCard3);
+		isInGame = true;
 		break;
-	case 2:
+	case 2:								//No Call
 		callMenu->setVisible(false);
 		file = "message0.png";
 		break;
@@ -318,12 +367,73 @@ void DeckScene::callDiZhu(int flag)
 		CallFunc::create([=] 
 		{
 			sprite->removeFromParentAndCleanup(true);
+			outCardMenu->setVisible(true);
 		}),
 		nullptr));
-
 	addChild(sprite);
 }
 
 void DeckScene::displaySetting()
 {
+}
+
+void DeckScene::flashCard()
+{
+	player->sortCard();
+	for (int i = 0; i < player->leftCard.size(); i++)
+	{
+		auto card = player->leftCard.at(i);
+		int interval = i - player->leftCard.size() / 2;
+		auto distance = cardIntervalHorizontal * interval;
+		if (card->isVisible())
+		{
+			card->setPosition(origin.x + visible.width / 2 + distance, 100);
+		}
+		else
+		{
+			card->setPosition(origin.x + visible.width / 2 + distance, 100 + cardIntervalVertical);
+			card->setVisible(true);
+			card->setSelect(true);
+			log("Index:%d, x:%f y:%f", i, card->getPositionX(), card->getPositionY());
+		}
+	}
+}
+
+bool DeckScene::onTouchBegan(Touch * touch, Event * unused_event)
+{
+	if (!isInGame)
+	{
+		return false;
+	}
+	Point point = touch->getLocation();
+	for (int i = player->leftCard.size() - 1; i >= 0; i--)
+	{
+		auto card = player->leftCard.at(i);
+		if (card->getBoundingBox().containsPoint(point))
+		{
+			if (!card->isSelect())
+			{
+				card->setSelect(true);
+				card->setPositionY(card->getPositionY() + cardIntervalVertical);
+			}
+			else
+			{
+				card->setSelect(false);
+				card->setPositionY(card->getPositionY() - cardIntervalVertical);
+			}
+			break;
+		}
+	}
+	return true;
+}
+
+
+void DeckScene::onTouchesMoved(const std::vector<Touch *>& touches, Event *unused_event)
+{
+
+}
+
+void DeckScene::onTouchEnded(Touch *touch, Event *unused_event)
+{
+
 }
