@@ -6,6 +6,7 @@ GameManager* GameManager::getInstance()
 	if (instance == nullptr)
 	{
 		instance = new GameManager();
+		PokerArrayUtil::initFunction();
 	}
 	return instance;
 }
@@ -73,17 +74,17 @@ void GameManager::initNumbers(Ref * ref)
 GameManager::GameManager()
 {
 	//Ô¤¼ÓÔØ×ÊÔ´
-	instance = nullptr;
+	//instance = nullptr;
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
 	srand(time(nullptr));
 
-	TextureCache::getInstance()->addImageAsync("logo.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	TextureCache::getInstance()->addImageAsync("logo_dizhu.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	TextureCache::getInstance()->addImageAsync("logo_nongmin.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	TextureCache::getInstance()->addImageAsync("logo_unknown.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	TextureCache::getInstance()->addImageAsync("poke_back_header.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	TextureCache::getInstance()->addImageAsync("poker_number.png", CC_CALLBACK_1(GameManager::initNumbers, this));
-	TextureCache::getInstance()->addImageAsync("puke_whole.png", CC_CALLBACK_1(GameManager::initCard, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_dizhu.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_nongmin.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_unknown.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("poke_back_header.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("poker_number.png", CC_CALLBACK_1(GameManager::initNumbers, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("puke_whole.png", CC_CALLBACK_1(GameManager::initCard, this));
 	
 }

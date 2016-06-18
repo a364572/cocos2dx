@@ -39,37 +39,49 @@ private:
 	bool select;
 };
 
-typedef bool(*JUDGE_FUNCTION)();
+enum PokerArrayType
+{
+	ILLEGAL,			//不合法					0
+	SINGLE,				//单牌			== 1		1
+	QUEEN_BOMB,			//王炸			== 2		2
+	PAIR,				//对子			== 2		3
+	THREE_WITH_NONE,	//三个			== 3		4
+	BOMB,				//炸弹			== 4		5
+	THREE_WITH_SINGLE,	//三带一		== 4		6
+	THREE_WITH_PAIR,	//三带一对		== 5		7
+	SEQUENCE,			//顺子			>= 5		8
+	BOMB_WITH_SINGLE,	//炸弹带两个	== 6		9
+	MULTIPLE_PAIR,		//连对			>= 6		10
+	PLANE_WITH_NONE,	//飞机不带		>= 6		11
+	BOMB_WITH_PAIR,		//炸弹带两对	== 8		12
+	PLANE_WITH_SINGLE,	//飞机带单牌	>= 8		13
+	PLANE_WITH_PAIR,	//飞机带对子	>= 10		14
+};
+
 class PokerArray
 {
 public:
-	enum PokerArrayType
-	{
-		ILLEGAL,			//不合法
 
-		SINGLE,				//单牌
+	/** sort the card by the length of each value **/
+	void sortByLength();
+	void sortByValue();
 
-		PAIR,				//对子
+	PokerArray();
+	PokerArray(std::vector<PokerCard *> cards);
 
-		THREE_WITH_NONE,	//三个
+	/** store all the card **/
+	std::vector<PokerCard *> cardArray;
+	PokerArrayType type;
+	int lengthOfType;
+};
 
-		THREE_WITH_SINGLE,	//三带一
-		BOMB,				//炸弹
-
-		THREE_WITH_PAIR,	//三带一对
-		SEQUENCE,			//顺子
-
-		BOMB_WITH_SINGLE,	//炸弹带两个
-		MULTIPLE_PAIR,		//连对
-		PLANE_WITH_NONE,	//飞机不带
-
-		BOMB_WITH_PAIR,		//炸弹带两对
-		PLANE_WITH_SINGLE,	//飞机带单牌
-
-		PLANE_WITH_PAIR,	//飞机带对子
-
-		QUEEN_BOMB,			//王炸
-	};
+typedef bool(*JUDGE_FUNCTION)(PokerArray *);
+class PokerArrayUtil
+{
+public:
+	/** sort the card based on the value,
+	cards of the same value will be further sorted by the type **/
+	static bool compareByLocalValue(PokerCard *card1, PokerCard *card2);
 
 	//all the cards should be sort by their value in type firstly
 	static bool isSingle(PokerArray *);
@@ -87,40 +99,12 @@ public:
 	static bool isBombWithPair(PokerArray *);
 	static bool isQueenBomb(PokerArray *);
 
-	/** sort the card by the length of each value **/
-	void sortByLength();
-	void sortByValue();
+	static void judgeTypeOfCards(PokerArray *);
+	static void initFunction();
 
-	/** sort the card based on the value, 
-	cards of the same value will be further sorted by the type **/
-	static int compareByLocalValue(PokerCard *card1, PokerCard *card2)
-	{
-		if (card2->getValueInType() == card1->getValueInType())
-		{
-			return card2->getType() < card1->getType();
-		}
-		return card2->getValueInType() < card1->getValueInType();
-	}
-	PokerArray()
-	{
-		type = ILLEGAL;
-	}
-	PokerArray(std::vector<PokerCard *> cards)
-	{
-		this->type = ILLEGAL;
-		for (auto card : cards)
-		{
-			cardArray.push_back(card);
-		}
-		bool (*pFunc)() = nullptr;
-		pFunc = isQueenBomb;
-		std::vector<JUDGE_FUNCTION> funList;
-		funList->push_back(isQueenBomb);
-		for (int i = QUEEN_BOMB; i >= SINGLE; i--)
-		{
-		}
-	}
-	std::vector<PokerCard *> cardArray;
-	PokerArrayType type;
-	int lengthOfType;
+	static std::map<PokerArrayType, JUDGE_FUNCTION> funMap;	//easy to get the counterpart function
+	static std::vector<PokerArrayType> funList;				//card type priority
+
+private:
+	static PokerArrayUtil* instance;
 };

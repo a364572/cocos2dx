@@ -74,7 +74,7 @@ void DeckScene::initDeck()
 	int col = 0;
 	for (int i = 0; i < 54; i++)
 	{
-		auto card = GameManager::getInstance()->getRawCardArray().at(i);
+		auto card = GameManager::getInstance()->rawCardArray.at(i);
 		card->setAnchorPoint(Vec2(0, 0));
 		cardArray.pushBack(card);
 		if (i % 13 == 0) {
@@ -207,6 +207,7 @@ void DeckScene::preload(float dt)
 	}
 }
 
+/** create the menu, shuffle the cards and assign them to the player **/
 void DeckScene::startGame()
 {
 	readyMenu->setVisible(false);
@@ -281,7 +282,7 @@ void DeckScene::startGame()
 			card->runAction(MoveBy::create(shuffleTime, Vec2(distance, 0)));
 		}
 		//add the card in Sequence based on their value
-		addChild(card, 54 - card->getValueInAll());
+		addChild(card);
 	}
 }
 
@@ -300,7 +301,14 @@ void DeckScene::outCard(int flag)
 		}
 	}
 	PokerArray array(selectCard);
+	std::string str = "Type:" + std::to_string(array.type);
+	for (auto card : array.cardArray)
+	{
+		str = str + " " + std::to_string(card->getValueInType());
+	}
+	log(str.c_str());
 }
+
 
 void DeckScene::callDiZhu(int flag)
 {
@@ -313,9 +321,9 @@ void DeckScene::callDiZhu(int flag)
 		callMenu->setVisible(false);
 		file = "message1.png";
 		//assign the bottom cards to the player and display all the cards
-		card1 = GameManager::getInstance()->getRawCardArray().at(randCards.at(51));
-		card2 = GameManager::getInstance()->getRawCardArray().at(randCards.at(52));
-		card3 = GameManager::getInstance()->getRawCardArray().at(randCards.at(53));
+		card1 = GameManager::getInstance()->rawCardArray.at(randCards.at(51));
+		card2 = GameManager::getInstance()->rawCardArray.at(randCards.at(52));
+		card3 = GameManager::getInstance()->rawCardArray.at(randCards.at(53));
 		log("Add before : %d", player->leftCard.size());
 		player->leftCard.push_back(card1);
 		player->leftCard.push_back(card2);
@@ -324,9 +332,9 @@ void DeckScene::callDiZhu(int flag)
 		card1->setVisible(false);
 		card2->setVisible(false);
 		card3->setVisible(false);
-		addChild(card1, 54 - card1->getValueInAll());
-		addChild(card2, 54 - card2->getValueInAll());
-		addChild(card3, 54 - card3->getValueInAll());
+		addChild(card1);
+		addChild(card2);
+		addChild(card3);
 		flashCard();
 
 		bottomCard1 = Sprite::createWithSpriteFrame(card1->getSpriteFrame());
@@ -385,6 +393,7 @@ void DeckScene::flashCard()
 		auto card = player->leftCard.at(i);
 		int interval = i - player->leftCard.size() / 2;
 		auto distance = cardIntervalHorizontal * interval;
+		card->removeFromParentAndCleanup(true);
 		if (card->isVisible())
 		{
 			card->setPosition(origin.x + visible.width / 2 + distance, 100);
@@ -396,6 +405,7 @@ void DeckScene::flashCard()
 			card->setSelect(true);
 			log("Index:%d, x:%f y:%f", i, card->getPositionX(), card->getPositionY());
 		}
+		addChild(card);
 	}
 }
 
