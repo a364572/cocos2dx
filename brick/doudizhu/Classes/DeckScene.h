@@ -1,8 +1,10 @@
 #pragma once
-#include "cocos2d.h"
-#include "PokerCard.h"
 #include "Player.h"
+#ifndef __COCOS_2D_H__
+#define __COCOS_2D_H__
+#include "cocos2d.h"
 USING_NS_CC;
+#endif
 
 //甲板场景用来出牌
 class DeckScene : public Layer
@@ -54,6 +56,8 @@ private:
 	Sprite* bottomCard1;	
 	Sprite* bottomCard2;	
 	Sprite* bottomCard3;
+
+	PokerArrayType currentPokerType;			//the poker type in this round
 
 	const float shuffleTime = 3.0f;
 	const float cardIntervalHorizontal = 30.0f;

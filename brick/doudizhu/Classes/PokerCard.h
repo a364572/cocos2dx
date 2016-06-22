@@ -1,6 +1,9 @@
 #pragma once
+#ifndef __COCOS_2D_H__
+#define __COCOS_2D_H__
 #include "cocos2d.h"
 USING_NS_CC;
+#endif
 class PokerCard : public Sprite
 {
 public:

@@ -58,6 +58,7 @@ bool DeckScene::init()
 	robMenu = nullptr;
 	outCardMenu = nullptr;
 	isInGame = false;
+	currentPokerType = PokerArrayType::ILLEGAL;
 	schedule(schedule_selector(DeckScene::preload));
 	return true;
 }
@@ -255,9 +256,9 @@ void DeckScene::startGame()
 	}
 	random_shuffle(randCards.begin(), randCards.end());
 
-	player->setAttribute(0, 0, 0, randCards);
-	player1->setAttribute(1, 1, 1, randCards);
-	player2->setAttribute(1, 2, 2, randCards);
+	player->setAttribute(0, 0, 0, true, randCards);
+	player1->setAttribute(1, 1, 1, false, randCards);
+	player2->setAttribute(1, 2, 2, false, randCards);
 
 	player->sortCard();
 	//display the card of each player

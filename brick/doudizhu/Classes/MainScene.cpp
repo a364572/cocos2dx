@@ -1,5 +1,5 @@
 #include "MainScene.h"
-#include "DeckScene.h"
+#include "GameRoomScene.h"
 Scene* MainScene::createScene()
 {
 	auto scene = Scene::create();
@@ -37,6 +37,7 @@ bool MainScene::init()
 	auto helpMenu = MenuItemImage::create("start_green_btn.png", "start_green_btn_down.png", "", CC_CALLBACK_0(MainScene::displayHelp, this));
 	auto exitMenu = MenuItemImage::create("start_red_btn.png", "start_red_btn_down.png", "", CC_CALLBACK_0(MainScene::exitGame, this));
 
+
 	mainMenu = Menu::create();
 	mainMenu->addChild(startMenu);
 	mainMenu->addChild(helpMenu);
@@ -47,12 +48,14 @@ bool MainScene::init()
 	background->addChild(mainMenu);
 
 	helpSprite = nullptr;
+
+
 	return true;
 }
 
 void MainScene::startGame()
 {
-	Director::getInstance()->replaceScene(DeckScene::createScene());
+	Director::getInstance()->replaceScene(GameRoomScene::createScene());
 }
 
 void MainScene::displayHelp()
@@ -81,4 +84,3 @@ void MainScene::backFromHelp()
 	helpSprite->setVisible(false);
 	mainMenu->setEnabled(true);
 }
-

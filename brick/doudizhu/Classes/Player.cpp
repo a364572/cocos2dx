@@ -11,7 +11,7 @@ Player * Player::create(std::string name)
 }
 
 /** type: nongming or dizhu; pos: position in the room; **/
-void Player::setAttribute(int type, int roomPos, int index, std::vector<int>& cards)
+void Player::setAttribute(int type, int roomPos, int index, bool dizhu, std::vector<int>& cards)
 {
 	CC_ASSERT(type < 2 && roomPos >= 0);
 	CC_ASSERT(roomPos < 3 && roomPos >= 0);
