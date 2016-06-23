@@ -1,4 +1,5 @@
 #include "GameRoomScene.h"
+#include "GameManager.h"
 
 Scene * GameRoomScene::createScene()
 {
@@ -22,7 +23,35 @@ void GameRoomScene::refreshRoom()
 	{
 		roomList.pop_back();
 	}
-	roomTable->reloadData();
+	//roomTable->reloadData();
+}
+
+void GameRoomScene::roomListSelected(Ref * ref, ui::ListView::EventType type)
+{
+	log("Selected");
+	auto list = (ui::ListView *)ref;
+	switch (type)
+	{
+	case ui::ListView::EventType::ON_SELECTED_ITEM_START:
+		log("Item %d Selected", list->getCurSelectedIndex());
+		break;
+	case ui::ListView::EventType::ON_SELECTED_ITEM_END:
+		break;
+	}
+}
+
+void GameRoomScene::roomListScrolled(Ref * ref, ui::ScrollView::EventType type)
+{
+	switch (type)
+	{
+	case ui::ScrollView::EventType::SCROLL_TO_TOP:
+		log("Scroll to top");
+		break;
+	case ui::ScrollView::EventType::SCROLL_TO_BOTTOM:
+		log("Scroll to bottom");
+		break;
+	}
+
 }
 
 bool GameRoomScene::init()
@@ -36,6 +65,8 @@ bool GameRoomScene::init()
 	origin = Director::getInstance()->getVisibleOrigin();
 	selectIndex = -1;
 
+
+	GameManager::getInstance();
 	roomList.push_back(GameRoom("room1", 2));
 	roomList.push_back(GameRoom("room2", 3));
 	roomList.push_back(GameRoom("room3", 2));
@@ -62,27 +93,74 @@ bool GameRoomScene::init()
 	bg->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 	addChild(bg, -1);
 	//创建名字输入框
-	editBox = EditBox::create(Size(400, 50), Scale9Sprite::create("get_time.png"));
-	editBox->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height - 100));
-	editBox->setFont("arial", 30);
-	editBox->setFontColor(Color3B::ORANGE);
-	editBox->setPlaceHolder("Input Your Name");
-	editBox->setPlaceholderFontColor(Color3B::GRAY);
-	editBox->setMaxLength(10);
-//	editBox->setText("hahaha");
-	addChild(editBox);
+//	editBox = EditBox::create(Size(400, 50), Scale9Sprite::create("get_time.png"));
+//	editBox->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height - 100));
+//	editBox->setFont("arial", 30);
+//	editBox->setFontColor(Color3B::ORANGE);
+//	editBox->setPlaceHolder("Input Your Name");
+//	editBox->setPlaceholderFontColor(Color3B::GRAY);
+//	editBox->setMaxLength(10);
+////	editBox->setText("hahaha");
+//	addChild(editBox);
 
-	//创建房间列表
-	roomTable = TableView::create(this, Size(150, 400));
-	roomTable->setDirection(ScrollView::Direction::VERTICAL);
-	roomTable->ignoreAnchorPointForPosition(false);
-	roomTable->setAnchorPoint(Vec2(0.5, 0.5));
-	roomTable->setPosition(origin.x + visible.width / 3, origin.y + visible.height / 2);
-	roomTable->setDelegate(this);
-	roomTable->setVerticalFillOrder(TableView::VerticalFillOrder::TOP_DOWN);
-	roomTable->reloadData();
-	addChild(roomTable);
+	////创建房间列表
+	//roomTable = TableView::create(this, Size(150, 400));
+	//roomTable->setDirection(ScrollView::Direction::VERTICAL);
+	//roomTable->ignoreAnchorPointForPosition(false);
+	//roomTable->setAnchorPoint(Vec2(0.5, 0.5));
+	//roomTable->setPosition(origin.x + visible.width / 3, origin.y + visible.height / 2);
+	//roomTable->setDelegate(this);
+	//roomTable->setVerticalFillOrder(TableView::VerticalFillOrder::TOP_DOWN);
+	//roomTable->reloadData();
+	//addChild(roomTable);
 
+
+	//创建listview 分别注册滑动事件和点击事件
+	auto listView = ui::ListView::create();
+	listView->setDirection(ui::SCROLLVIEW_DIR_VERTICAL);
+	listView->ignoreAnchorPointForPosition(false);
+	listView->setTouchEnabled(true);
+	listView->setBounceEnabled(true);
+	listView->setBackGroundColor(Color3B(255, 0, 0));
+	listView->setSize(Size(300, 400));
+	listView->setAnchorPoint(Vec2(0.5, 0.5));
+	listView->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height / 2));
+	listView->addEventListener((ui::ListView::ccListViewCallback)CC_CALLBACK_2(GameRoomScene::roomListSelected, this));
+	listView->addEventListener((ui::ListView::ccScrollViewCallback)CC_CALLBACK_2(GameRoomScene::roomListScrolled, this));
+	
+	auto button = ui::Button::create("room.png");
+	button->setName("Test Button");
+
+	auto default_layout = ui::Layout::create();
+	auto sprite = Sprite::create("room.png");
+	default_layout->setSize(sprite->getContentSize());
+	sprite->setPosition(Vec2(sprite->getContentSize().width / 2, sprite->getContentSize().height / 2));
+	default_layout->addChild(sprite);
+
+	//listView->setItemModel(default_layout);
+	for (int i = 0; i < roomList.size(); i++)
+	{
+		auto widget = ui::Layout::create();
+		auto buttonSprite = Sprite::create("room.png");
+		auto nameText = ui::Text::create(roomList.at(i).name, "arial", 30);
+		auto countText = ui::Text::create(std::to_string(roomList.at(i).count), "arial", 30);
+		buttonSprite->setAnchorPoint(Vec2(0, 0));
+		buttonSprite->setPosition(Vec2::ZERO);
+		widget->setContentSize(buttonSprite->getContentSize() * 1.2);
+		widget->addChild(buttonSprite);
+		widget->setTouchEnabled(true);
+
+		nameText->setAnchorPoint(Vec2(0, 0.5));
+		nameText->setPosition(Vec2(0, widget->getContentSize().height / 2));
+		countText->setAnchorPoint(Vec2(1, 0.5));
+		countText->setPosition(Vec2(widget->getContentSize().width, widget->getContentSize().height / 2));
+		widget->addChild(nameText);
+		widget->addChild(countText);
+		listView->pushBackCustomItem(widget);
+
+	}
+
+	addChild(listView);
 	TTFConfig ttf("fonts/arial.ttf", 50);
 
 	auto refreshRoomMenu = MenuItemLabel::create(Label::createWithTTF(ttf, "Refresh"));

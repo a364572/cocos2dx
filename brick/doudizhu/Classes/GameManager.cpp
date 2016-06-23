@@ -7,6 +7,11 @@ GameManager* GameManager::getInstance()
 	{
 		instance = new GameManager();
 		PokerArrayUtil::initFunction();
+
+		//创建后台线程和服务器进行通信
+		instance->isConnected = false;
+		instance->socketThread = std::thread(&GameManager::threadFunction, instance);
+		instance->socketThread.detach();
 	}
 	return instance;
 }
@@ -14,6 +19,159 @@ GameManager* GameManager::getInstance()
 void GameManager::increaseCount(Ref *ref)
 {
 	numberOfLoadRes++;
+}
+void GameManager::loadResource()
+{
+	Director::getInstance()->getTextureCache()->addImageAsync("logo.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_dizhu.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_nongmin.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("logo_unknown.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("poke_back_header.png", CC_CALLBACK_1(GameManager::increaseCount, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("poker_number.png", CC_CALLBACK_1(GameManager::initNumbers, this));
+	Director::getInstance()->getTextureCache()->addImageAsync("puke_whole.png", CC_CALLBACK_1(GameManager::initCard, this));
+}
+void GameManager::threadFunction()
+{
+	//加载WinSock库
+	WSADATA	wsaData;
+	WORD version = MAKEWORD(1, 1);
+	int err = WSAStartup(version, &wsaData);
+	if (err != 0)
+	{
+		log("Failed to initilize Win Socket!");
+		return;
+	}
+	if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
+	{
+		log("The version of protocol is error!");
+		WSACleanup();
+		return;
+	}
+
+	//创建socket并连接服务器
+	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (sock <= 0)
+	{
+		log("Failed to create socket!");
+		return;
+	}
+	struct sockaddr_in sockaddr;
+	sockaddr.sin_family = AF_INET;
+	sockaddr.sin_addr.S_un.S_addr = inet_addr(SERVER_HOST);
+	sockaddr.sin_port = htons(SERVER_PORT);
+	err = connect(sock, (struct sockaddr *)&sockaddr, sizeof(struct sockaddr));
+	if (err != 0)
+	{
+		log("Failed to connect with %s:%d", SERVER_HOST, SERVER_PORT);
+		return;
+	}
+	remainLength = 0;
+	readBufLength = 0;
+	isConnected = true;
+	char buf[1];
+	while (isConnected)
+	{
+		//重新接收消息
+		if (remainLength == 0) {
+			err = recv(sock, buf, 1, 0);
+			if (err < 0)
+			{
+				release();
+				break;
+			}
+			if (err == 0)
+			{
+				continue;
+			}
+			int msgLen = buf[0];
+			remainLength = msgLen;
+		}
+		//继续接收消息
+		else
+		{
+			err = recv(sock, readBuf + readBufLength, remainLength, 0);
+			if (err < 0)
+			{
+				release();
+				break;
+			}
+			if (err == 0)
+			{
+				continue;
+			}
+			readBufLength += err;
+			remainLength -= err;
+		}
+		if (remainLength == 0)
+		{
+			handleMessage();
+		}
+	}
+
+}
+void GameManager::release()
+{
+	log("Disconnect!");
+	closesocket(sock);
+	sock = -1;
+	isConnected = false;
+	remainLength = 0;
+	readBufLength = 0;
+}
+void GameManager::handleMessage()
+{
+	readBuf[readBufLength] = '/0';
+	std::string str = readBuf + 1;
+	int msgType = readBuf[0];
+	switch (msgType) {
+	case GET_ROOM_LIST_RESULT:
+		break;
+	case CREATE_ROOM_RESULT:
+		break;
+	case ENTER_ROOM_RESULT:
+		break;
+	case READY_RESULT:
+		break;
+	case READY_OTHERS:
+		break;
+	case OUT_CARD_RESULT:
+		break;
+	case OUT_CARD_OTHERS:
+		break;
+	case START_GAME:
+		break;
+	case END_GAME:
+		break;
+	}
+	remainLength = 0;
+	readBufLength = 0;
+}
+void GameManager::handleGetRoomListResult()
+{
+}
+void GameManager::handleEnterRoomResult()
+{
+}
+void GameManager::handleEnterRoomOthers()
+{
+}
+void GameManager::handleReadyResult()
+{
+}
+void GameManager::handleReadyOthers()
+{
+}
+void GameManager::handleOutCardResult()
+{
+}
+void GameManager::handleOutCardOthers()
+{
+}
+void GameManager::handleStartGame()
+{
+}
+void GameManager::handleEndGame()
+{
 }
 void GameManager::initCard(Ref * ref)
 {
@@ -71,6 +229,25 @@ void GameManager::initNumbers(Ref * ref)
 	increaseCount(ref);
 }
 
+std::vector<std::string> GameManager::split(std::string & str, char ch)
+{
+	int prev = 0;
+	std::vector<std::string> result;
+	for(int i = 0; i < str.size(); i++)
+	{
+		if (str[i] == ch)
+		{
+			if (i > prev) 
+			{
+				result.push_back(str.substr(prev, i - prev));
+			}
+			prev = i + 1;
+		}
+	}
+	result.push_back(str.substr(prev));
+	return result;
+}
+
 GameManager::GameManager()
 {
 	//预加载资源
@@ -78,13 +255,4 @@ GameManager::GameManager()
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
 	srand(time(nullptr));
-
-	Director::getInstance()->getTextureCache()->addImageAsync("logo.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("logo_dizhu.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("logo_nongmin.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("logo_unknown.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("poke_back_header.png", CC_CALLBACK_1(GameManager::increaseCount, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("poker_number.png", CC_CALLBACK_1(GameManager::initNumbers, this));
-	Director::getInstance()->getTextureCache()->addImageAsync("puke_whole.png", CC_CALLBACK_1(GameManager::initCard, this));
-	
 }

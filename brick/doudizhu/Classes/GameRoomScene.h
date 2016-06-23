@@ -1,6 +1,7 @@
 #pragma once
 #include "cocos2d.h"
 #include "cocos-ext.h"
+#include "ui/CocosGUI.h"
 USING_NS_CC;
 USING_NS_CC_EXT;
 
@@ -32,6 +33,9 @@ public:
 	void enterRoom();
 	void createRoom();
 	void refreshRoom();
+	
+	void roomListSelected(Ref* ref, ui::ListView::EventType type);
+	void roomListScrolled(Ref* ref, ui::ScrollView::EventType type);
 
 	virtual bool init();
 	virtual void editBoxEditingDidBegin(EditBox* edit) { log("BEGIN"); };

@@ -59,6 +59,8 @@ bool DeckScene::init()
 	outCardMenu = nullptr;
 	isInGame = false;
 	currentPokerType = PokerArrayType::ILLEGAL;
+
+	GameManager::getInstance()->loadResource();
 	schedule(schedule_selector(DeckScene::preload));
 	return true;
 }
