@@ -15,15 +15,26 @@ void GameRoomScene::enterRoom()
 
 void GameRoomScene::createRoom()
 {
+	std::string roomName = editBox->getText();
+	if (roomName == "")
+	{
+		log("Input the name!");
+		return;
+	}
+	int fd = GameManager::getInstance()->sock;
+	if (fd <= 0)
+	{
+		return;
+	}
+
+	std::string msg = "" + MessageType::CREATE_ROOM;
+	msg.append(" ");
+	msg.append(roomName);
+	send(fd, msg.data(), msg.size(), 0);
 }
 
 void GameRoomScene::refreshRoom()
 {
-	if (roomList.size() > 0)
-	{
-		roomList.pop_back();
-	}
-	//roomTable->reloadData();
 }
 
 void GameRoomScene::roomListSelected(Ref * ref, ui::ListView::EventType type)
@@ -67,41 +78,21 @@ bool GameRoomScene::init()
 
 
 	GameManager::getInstance();
-	roomList.push_back(GameRoom("room1", 2));
-	roomList.push_back(GameRoom("room2", 3));
-	roomList.push_back(GameRoom("room3", 2));
-	roomList.push_back(GameRoom("room4", 1));
-	roomList.push_back(GameRoom("room5", 1));
-	roomList.push_back(GameRoom("room6", 1));
-	roomList.push_back(GameRoom("room7", 1));
-	roomList.push_back(GameRoom("room8", 1));
-	roomList.push_back(GameRoom("room9", 1));
-	roomList.push_back(GameRoom("room10", 1));
-	roomList.push_back(GameRoom("room11", 1));
-	roomList.push_back(GameRoom("room12", 1));
-	roomList.push_back(GameRoom("room13", 1));
-	roomList.push_back(GameRoom("room14", 1));
-	roomList.push_back(GameRoom("room15", 1));
-	roomList.push_back(GameRoom("room16", 1));
-	roomList.push_back(GameRoom("room17", 1));
-	roomList.push_back(GameRoom("room18", 1));
-	roomList.push_back(GameRoom("room19", 1));
-//	roomList.push_back(GameRoom("room20", 1));
 
 	log("Add background.png");
 	auto bg = Sprite::create("background.png");
 	bg->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 	addChild(bg, -1);
 	//创建名字输入框
-//	editBox = EditBox::create(Size(400, 50), Scale9Sprite::create("get_time.png"));
-//	editBox->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height - 100));
-//	editBox->setFont("arial", 30);
-//	editBox->setFontColor(Color3B::ORANGE);
-//	editBox->setPlaceHolder("Input Your Name");
-//	editBox->setPlaceholderFontColor(Color3B::GRAY);
-//	editBox->setMaxLength(10);
-////	editBox->setText("hahaha");
-//	addChild(editBox);
+	editBox = EditBox::create(Size(400, 50), Scale9Sprite::create("get_time.png"));
+	editBox->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height - 100));
+	editBox->setFont("arial", 30);
+	editBox->setFontColor(Color3B::ORANGE);
+	editBox->setPlaceHolder("Input Your Name");
+	editBox->setPlaceholderFontColor(Color3B::GRAY);
+	editBox->setMaxLength(10);
+	editBox->setText("");
+	addChild(editBox);
 
 	////创建房间列表
 	//roomTable = TableView::create(this, Size(150, 400));
@@ -138,12 +129,12 @@ bool GameRoomScene::init()
 	default_layout->addChild(sprite);
 
 	//listView->setItemModel(default_layout);
-	for (int i = 0; i < roomList.size(); i++)
+	for (int i = 0; i < GameManager::getInstance()->roomList.size(); i++)
 	{
 		auto widget = ui::Layout::create();
 		auto buttonSprite = Sprite::create("room.png");
-		auto nameText = ui::Text::create(roomList.at(i).name, "arial", 30);
-		auto countText = ui::Text::create(std::to_string(roomList.at(i).count), "arial", 30);
+		auto nameText = ui::Text::create(GameManager::getInstance()->roomList.at(i).name, "arial", 30);
+		auto countText = ui::Text::create(std::to_string(GameManager::getInstance()->roomList.at(i).count), "arial", 30);
 		buttonSprite->setAnchorPoint(Vec2(0, 0));
 		buttonSprite->setPosition(Vec2::ZERO);
 		widget->setContentSize(buttonSprite->getContentSize() * 1.2);
@@ -193,10 +184,10 @@ void GameRoomScene::tableCellTouched(TableView * table, TableViewCell * cell)
 	if (bg)
 	{
 		bg->setColor(Color3B(255, 255, 0));
-		roomList.at(cell->getIdx()).selected = true;
+		GameManager::getInstance()->roomList.at(cell->getIdx()).selected = true;
 		if (selectIndex >= 0)
 		{
-			roomList.at(selectIndex).selected = false;
+			GameManager::getInstance()->roomList.at(selectIndex).selected = false;
 			if (table->cellAtIndex(selectIndex))
 			{
 				auto selectBG = (Sprite *)table->cellAtIndex(selectIndex)->getChildByTag(ROOM_BACKGROUND);
@@ -217,15 +208,15 @@ TableViewCell * GameRoomScene::tableCellAtIndex(TableView * table, ssize_t idx)
 	std::string count;
 	bool isSelected = false;
 	auto cell = table->dequeueCell();
-	if (idx >= roomList.size())
+	if (idx >= GameManager::getInstance()->roomList.size())
 	{
 		name = count = "";
 	}
 	else
 	{
-		name = roomList.at(idx).name;
-		count = std::to_string(roomList.at(idx).count);
-		isSelected = roomList.at(idx).selected;
+		name = GameManager::getInstance()->roomList.at(idx).name;
+		count = std::to_string(GameManager::getInstance()->roomList.at(idx).count);
+		isSelected = GameManager::getInstance()->roomList.at(idx).selected;
 
 	}
 	if (!cell)
@@ -265,7 +256,7 @@ TableViewCell * GameRoomScene::tableCellAtIndex(TableView * table, ssize_t idx)
 	}
 	else
 	{
-		if (idx < roomList.size())
+		if (idx < GameManager::getInstance()->roomList.size())
 		{
 			auto nameLabel = (Label*)(cell->getChildByTag(ROOM_NAME));
 			auto countLabel = (Label*)(cell->getChildByTag(NUMBER_OF_PLAYERS));

@@ -1,4 +1,5 @@
 #include "GameManager.h"
+#include "DeckScene.h"
 
 GameManager* GameManager::instance = nullptr;
 GameManager* GameManager::getInstance()
@@ -32,6 +33,7 @@ void GameManager::loadResource()
 }
 void GameManager::threadFunction()
 {
+	log("Thread start!\n");
 	//加载WinSock库
 	WSADATA	wsaData;
 	WORD version = MAKEWORD(1, 1);
@@ -65,6 +67,7 @@ void GameManager::threadFunction()
 		log("Failed to connect with %s:%d", SERVER_HOST, SERVER_PORT);
 		return;
 	}
+	log("Connected with %s:%d", SERVER_HOST, SERVER_PORT);
 	remainLength = 0;
 	readBufLength = 0;
 	isConnected = true;
@@ -73,6 +76,7 @@ void GameManager::threadFunction()
 	{
 		//重新接收消息
 		if (remainLength == 0) {
+			//接收一个字节
 			err = recv(sock, buf, 1, 0);
 			if (err < 0)
 			{
@@ -125,22 +129,34 @@ void GameManager::handleMessage()
 	int msgType = readBuf[0];
 	switch (msgType) {
 	case GET_ROOM_LIST_RESULT:
+		handleGetRoomListResult();
 		break;
 	case CREATE_ROOM_RESULT:
+		handleCreateRoomResult();
 		break;
 	case ENTER_ROOM_RESULT:
+		handleEnterRoomResult();
+		break;
+	case ENTER_ROOM_OTHERS:
+		handleEnterRoomOthers();
 		break;
 	case READY_RESULT:
+		handleReadyResult();
 		break;
 	case READY_OTHERS:
+		handleReadyOthers();
 		break;
 	case OUT_CARD_RESULT:
+		handleOutCardResult();
 		break;
 	case OUT_CARD_OTHERS:
+		handleOutCardOthers();
 		break;
 	case START_GAME:
+		handleStartGame();
 		break;
 	case END_GAME:
+		handleEndGame();
 		break;
 	}
 	remainLength = 0;
@@ -148,6 +164,21 @@ void GameManager::handleMessage()
 }
 void GameManager::handleGetRoomListResult()
 {
+	std::string list(readBuf + 1);
+	auto rooms = split(list, '\n');
+	for (auto str : rooms)
+	{
+		auto result = split(str, ' ');
+
+	}
+}
+void GameManager::handleCreateRoomResult()
+{
+	std::string flag = readBuf + 1;
+	if (flag == "1")
+	{
+		Director::getInstance()->replaceScene(TransitionFadeDown::create(3.0f, DeckScene::createScene()));
+	}
 }
 void GameManager::handleEnterRoomResult()
 {
@@ -255,4 +286,25 @@ GameManager::GameManager()
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
 	srand(time(nullptr));
+
+	roomList.push_back(GameRoom("room1", 2));
+	roomList.push_back(GameRoom("room2", 3));
+	roomList.push_back(GameRoom("room3", 2));
+	roomList.push_back(GameRoom("room4", 1));
+	roomList.push_back(GameRoom("room5", 1));
+	roomList.push_back(GameRoom("room6", 1));
+	roomList.push_back(GameRoom("room7", 1));
+	roomList.push_back(GameRoom("room8", 1));
+	roomList.push_back(GameRoom("room9", 1));
+	roomList.push_back(GameRoom("room10", 1));
+	roomList.push_back(GameRoom("room11", 1));
+	roomList.push_back(GameRoom("room12", 1));
+	roomList.push_back(GameRoom("room13", 1));
+	roomList.push_back(GameRoom("room14", 1));
+	roomList.push_back(GameRoom("room15", 1));
+	roomList.push_back(GameRoom("room16", 1));
+	roomList.push_back(GameRoom("room17", 1));
+	roomList.push_back(GameRoom("room18", 1));
+	roomList.push_back(GameRoom("room19", 1));
+	roomList.push_back(GameRoom("room20", 1));
 }

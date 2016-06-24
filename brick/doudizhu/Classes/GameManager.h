@@ -11,9 +11,19 @@ USING_NS_CC;
 #define BUFFER_SIZE 2048
 
 
+class GameRoom
+{
+public:
+	GameRoom() {}
+	GameRoom(std::string name, int count) { this->name = name; this->count = count; selected = false; };
+	std::string name;
+	int count;
+	bool selected;
+};
+
 enum MessageType
 {
-	ILLEGAL = 0,
+	//ILLEGAL = 0,
 	GET_ROOM_LIST = 1,      //获取房间列表
 	GET_ROOM_LIST_RESULT,
 	CREATE_ROOM,            //创建房间同时创建用户
@@ -46,6 +56,7 @@ public:
 	void release();
 	void handleMessage();
 	void handleGetRoomListResult();
+	void handleCreateRoomResult();
 	void handleEnterRoomResult();
 	void handleEnterRoomOthers();
 	void handleReadyResult();
@@ -69,6 +80,7 @@ public:
 	Vector<PokerCard *> rawCardArray;
 	Vector<Sprite *> numberArray;
 	std::vector<std::string> split(std::string& str, char ch);
+	std::vector<GameRoom> roomList;
 	/** store all the judge function by their priority **/
 private:
 	GameManager();
