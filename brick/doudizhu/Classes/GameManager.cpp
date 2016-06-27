@@ -8,11 +8,6 @@ GameManager* GameManager::getInstance()
 	{
 		instance = new GameManager();
 		PokerArrayUtil::initFunction();
-
-		//创建后台线程和服务器进行通信
-		instance->isConnected = false;
-		instance->socketThread = std::thread(&GameManager::threadFunction, instance);
-		instance->socketThread.detach();
 	}
 	return instance;
 }
@@ -30,6 +25,17 @@ void GameManager::loadResource()
 	Director::getInstance()->getTextureCache()->addImageAsync("poke_back_header.png", CC_CALLBACK_1(GameManager::increaseCount, this));
 	Director::getInstance()->getTextureCache()->addImageAsync("poker_number.png", CC_CALLBACK_1(GameManager::initNumbers, this));
 	Director::getInstance()->getTextureCache()->addImageAsync("puke_whole.png", CC_CALLBACK_1(GameManager::initCard, this));
+}
+void GameManager::connectWithServer()
+{
+	if (isConnected)
+	{
+		return;
+	}
+	//创建后台线程和服务器进行通信
+	instance->socketThread = std::thread(&GameManager::threadFunction);
+	instance->socketThread.detach();
+
 }
 void GameManager::threadFunction()
 {
@@ -71,6 +77,12 @@ void GameManager::threadFunction()
 	remainLength = 0;
 	readBufLength = 0;
 	isConnected = true;
+
+	//将socket设为
+
+	//首先向服务器发送注册信息
+	createRoom(player);
+
 	char buf[1];
 	while (isConnected)
 	{
@@ -113,12 +125,42 @@ void GameManager::threadFunction()
 	}
 
 }
+void GameManager::sendMessage(std::string message, MessageType type)
+{
+	char ch = type;
+	message = ch + message;
+	ch = message.size();
+	if (ch > 255)
+	{
+		MessageBox("消息内容过长", "错误");
+		return;
+	}
+
+	message = ch + message;
+	if (isConnected)
+	{
+		int len = 0;
+		int res = 0;
+		while (len < message.size())
+		{
+			res = send(sock, message.data() + len, message.size() - len, 0);
+			if (res < 0)
+			{
+				MessageBox("发送数据失败", "错误");
+				release();
+			}
+			len += res;
+		}
+	}
+
+}
 void GameManager::release()
 {
 	log("Disconnect!");
 	closesocket(sock);
 	sock = -1;
 	isConnected = false;
+	isWaitingCreate = false;
 	remainLength = 0;
 	readBufLength = 0;
 }
@@ -162,6 +204,49 @@ void GameManager::handleMessage()
 	remainLength = 0;
 	readBufLength = 0;
 }
+
+void GameManager::createPlayer(std::string player)
+{
+}
+
+void GameManager::getRoomList()
+{
+	sendMessage("", GET_ROOM_LIST);
+}
+
+void GameManager::createRoom(std::string room)
+{
+	isWaitingCreate = true;
+	sendMessage(room, CREATE_ROOM);
+}
+
+void GameManager::enterRoom(std::string room)
+{
+	sendMessage(room, ENTER_ROOM);
+}
+
+void GameManager::ready()
+{
+	sendMessage("", READY);
+}
+
+void GameManager::outCard(std::vector<PokerCard *> cards)
+{
+	std::string msg = "";
+	for (auto card : cards)
+	{
+		char value = card->getValueInAll();
+		msg.push_back(value);
+		msg.push_back(' ');
+	}
+	sendMessage(msg, OUT_CARD);
+}
+
+void GameManager::handleCreatePlyaerResult()
+{
+
+}
+
 void GameManager::handleGetRoomListResult()
 {
 	std::string list(readBuf + 1);
@@ -174,10 +259,14 @@ void GameManager::handleGetRoomListResult()
 }
 void GameManager::handleCreateRoomResult()
 {
-	std::string flag = readBuf + 1;
-	if (flag == "1")
+	if (isWaitingCreate)
 	{
-		Director::getInstance()->replaceScene(TransitionFadeDown::create(3.0f, DeckScene::createScene()));
+		isWaitingCreate = false;
+		std::string flag = readBuf + 1;
+		if (flag == "1")
+		{
+			Director::getInstance()->replaceScene(TransitionFadeDown::create(3.0f, DeckScene::createScene()));
+		}
 	}
 }
 void GameManager::handleEnterRoomResult()
@@ -285,6 +374,10 @@ GameManager::GameManager()
 	//instance = nullptr;
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
+	isConnected = false;
+	isWaitingCreate = false;
+	readBufLength = 0;
+	remainLength = 0;
 	srand(time(nullptr));
 
 	roomList.push_back(GameRoom("room1", 2));

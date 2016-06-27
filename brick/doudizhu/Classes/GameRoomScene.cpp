@@ -15,22 +15,6 @@ void GameRoomScene::enterRoom()
 
 void GameRoomScene::createRoom()
 {
-	std::string roomName = editBox->getText();
-	if (roomName == "")
-	{
-		log("Input the name!");
-		return;
-	}
-	int fd = GameManager::getInstance()->sock;
-	if (fd <= 0)
-	{
-		return;
-	}
-
-	std::string msg = "" + MessageType::CREATE_ROOM;
-	msg.append(" ");
-	msg.append(roomName);
-	send(fd, msg.data(), msg.size(), 0);
 }
 
 void GameRoomScene::refreshRoom()
@@ -83,28 +67,6 @@ bool GameRoomScene::init()
 	auto bg = Sprite::create("background.png");
 	bg->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 	addChild(bg, -1);
-	//创建名字输入框
-	editBox = EditBox::create(Size(400, 50), Scale9Sprite::create("get_time.png"));
-	editBox->setPosition(Vec2(origin.x + visible.width / 2, origin.y + visible.height - 100));
-	editBox->setFont("arial", 30);
-	editBox->setFontColor(Color3B::ORANGE);
-	editBox->setPlaceHolder("Input Your Name");
-	editBox->setPlaceholderFontColor(Color3B::GRAY);
-	editBox->setMaxLength(10);
-	editBox->setText("");
-	addChild(editBox);
-
-	////创建房间列表
-	//roomTable = TableView::create(this, Size(150, 400));
-	//roomTable->setDirection(ScrollView::Direction::VERTICAL);
-	//roomTable->ignoreAnchorPointForPosition(false);
-	//roomTable->setAnchorPoint(Vec2(0.5, 0.5));
-	//roomTable->setPosition(origin.x + visible.width / 3, origin.y + visible.height / 2);
-	//roomTable->setDelegate(this);
-	//roomTable->setVerticalFillOrder(TableView::VerticalFillOrder::TOP_DOWN);
-	//roomTable->reloadData();
-	//addChild(roomTable);
-
 
 	//创建listview 分别注册滑动事件和点击事件
 	auto listView = ui::ListView::create();
@@ -119,15 +81,6 @@ bool GameRoomScene::init()
 	listView->addEventListener((ui::ListView::ccListViewCallback)CC_CALLBACK_2(GameRoomScene::roomListSelected, this));
 	listView->addEventListener((ui::ListView::ccScrollViewCallback)CC_CALLBACK_2(GameRoomScene::roomListScrolled, this));
 	
-	auto button = ui::Button::create("room.png");
-	button->setName("Test Button");
-
-	auto default_layout = ui::Layout::create();
-	auto sprite = Sprite::create("room.png");
-	default_layout->setSize(sprite->getContentSize());
-	sprite->setPosition(Vec2(sprite->getContentSize().width / 2, sprite->getContentSize().height / 2));
-	default_layout->addChild(sprite);
-
 	//listView->setItemModel(default_layout);
 	for (int i = 0; i < GameManager::getInstance()->roomList.size(); i++)
 	{
@@ -170,108 +123,4 @@ bool GameRoomScene::init()
 	mainMenu->setPosition(origin.x + visible.width * 2 / 3, origin.y + visible.height / 2);
 	addChild(mainMenu);
 	return true;
-}
-
-void GameRoomScene::tableCellTouched(TableView * table, TableViewCell * cell)
-{
-	log("Cell touch %d", cell->getIdx());
-	if (cell->getIdx() == selectIndex)
-	{
-		return;
-	}
-	//背景变色
-	auto bg = (Sprite *)(cell->getChildByTag(ROOM_BACKGROUND));
-	if (bg)
-	{
-		bg->setColor(Color3B(255, 255, 0));
-		GameManager::getInstance()->roomList.at(cell->getIdx()).selected = true;
-		if (selectIndex >= 0)
-		{
-			GameManager::getInstance()->roomList.at(selectIndex).selected = false;
-			if (table->cellAtIndex(selectIndex))
-			{
-				auto selectBG = (Sprite *)table->cellAtIndex(selectIndex)->getChildByTag(ROOM_BACKGROUND);
-				if (selectBG)
-				{
-					selectBG->setColor(Color3B(255, 255, 255));
-
-				}
-			}
-		}
-		selectIndex = cell->getIdx();
-	}
-}
-
-TableViewCell * GameRoomScene::tableCellAtIndex(TableView * table, ssize_t idx)
-{
-	std::string name;
-	std::string count;
-	bool isSelected = false;
-	auto cell = table->dequeueCell();
-	if (idx >= GameManager::getInstance()->roomList.size())
-	{
-		name = count = "";
-	}
-	else
-	{
-		name = GameManager::getInstance()->roomList.at(idx).name;
-		count = std::to_string(GameManager::getInstance()->roomList.at(idx).count);
-		isSelected = GameManager::getInstance()->roomList.at(idx).selected;
-
-	}
-	if (!cell)
-	{
-
-		cell = TableViewCell::create();
-
-		auto bg = Sprite::create("room.png");
-		bg->setTag(ROOM_BACKGROUND);
-		bg->setAnchorPoint(Vec2::ZERO);
-		bg->setPosition(0, 0);
-		if (isSelected)
-		{
-			bg->setColor(Color3B(255, 255, 0));
-		}
-		else
-		{
-			bg->setColor(Color3B(255, 255, 255));
-		}
-		cell->addChild(bg, -1);
-
-		auto nameLabel = Label::createWithTTF(TTFConfig("fonts/arial.ttf", 20), name, TextHAlignment::CENTER);
-		nameLabel->ignoreAnchorPointForPosition(false);
-		nameLabel->setAnchorPoint(Vec2::ZERO);
-		nameLabel->setPosition(0, 0);
-		nameLabel->setTag(ROOM_NAME);
-		nameLabel->setTextColor(Color4B::BLACK);
-		cell->addChild(nameLabel, 1);
-
-		auto countLabel = Label::createWithTTF(TTFConfig("fonts/arial.ttf", 20), count, TextHAlignment::CENTER);
-		countLabel->ignoreAnchorPointForPosition(false);
-		countLabel->setAnchorPoint(Vec2(0, 0));
-		countLabel->setPosition(100, 0);
-		countLabel->setTag(NUMBER_OF_PLAYERS);
-		countLabel->setTextColor(Color4B::BLACK);
-		cell->addChild(countLabel, 1);
-	}
-	else
-	{
-		if (idx < GameManager::getInstance()->roomList.size())
-		{
-			auto nameLabel = (Label*)(cell->getChildByTag(ROOM_NAME));
-			auto countLabel = (Label*)(cell->getChildByTag(NUMBER_OF_PLAYERS));
-			auto bg = (Sprite *)(cell->getChildByTag(ROOM_BACKGROUND));
-			nameLabel->setString(name);
-			countLabel->setString(count);
-			if (isSelected)
-			{
-				bg->setColor(Color3B(255, 255, 0));
-			}
-			else
-			{
-				bg->setColor(Color3B(255, 255, 255));
-			}
-		}
-	}
-	return cell;
 }

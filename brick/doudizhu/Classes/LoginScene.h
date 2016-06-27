@@ -2,6 +2,8 @@
 #include "cocos2d.h"
 USING_NS_CC;
 
+#define CONNECT_TIME_OUT	10000
+#define SCHEDULE_INTERVAL	1000
 class CurTextField : public TextFieldTTF, public TextFieldDelegate
 {
 public:
@@ -17,6 +19,7 @@ public:
 	virtual void keyboardWillShow(IMEKeyboardNotificationInfo& info);
 	virtual void keyboardWillHide(IMEKeyboardNotificationInfo& info);
 
+
 };
 class LoginScene : public Layer
 {
@@ -24,5 +27,16 @@ public:
 	virtual bool init();
 	static Scene* createScene();
 	CREATE_FUNC(LoginScene);
+
+	virtual bool onTouchBegan(Touch *touch, Event *event);
+	virtual void onTouchMoved(Touch *touch, Event *event);
+	virtual void onTouchEnded(Touch *touch, Event *event);
+
+	void checkStatus(float time);
+
+	TextFieldTTF *inputText;
+	Sprite* loginBtn;
+	int checkCount;
+	bool isConnecting;
 };
 

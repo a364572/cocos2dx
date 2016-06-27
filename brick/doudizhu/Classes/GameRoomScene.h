@@ -5,8 +5,7 @@
 USING_NS_CC;
 USING_NS_CC_EXT;
 
-class GameRoomScene : public Layer, public TableViewDataSource, public TableViewDelegate,
-	public EditBoxDelegate
+class GameRoomScene : public Layer
 {
 public:
 	
@@ -28,22 +27,11 @@ public:
 	void roomListScrolled(Ref* ref, ui::ScrollView::EventType type);
 
 	virtual bool init();
-	virtual void editBoxEditingDidBegin(EditBox* edit) { log("BEGIN"); };
-	virtual void editBoxEditingDidEnd(EditBox* edit) { log("END"); };
-	virtual void editBoxTextChanged(EditBox* edit) { log("CHANGE"); };
-	virtual void editBoxReturn(EditBox* edit) { log("RETURN"); };
-	virtual void scrollViewDidScroll(ScrollView* view) {};
-	virtual void scrollViewDidZoom(ScrollView* view) {};
-	virtual void tableCellTouched(TableView* table, TableViewCell* cell);
-	virtual Size tableCellSizeForIndex(TableView *table, ssize_t idx) { return Size(150, 50); };
-	virtual TableViewCell* tableCellAtIndex(TableView *table, ssize_t idx);
-	virtual ssize_t numberOfCellsInTableView(TableView *table) { return 20; };
 
 	int selectIndex;
 	Color3B selectColor;
 	Size visible;
 	Point origin;
 	TableView* roomTable;
-	EditBox* editBox;
 	Menu* mainMenu;
 };

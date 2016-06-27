@@ -10,7 +10,14 @@ USING_NS_CC;
 #define SERVER_PORT 7777
 #define BUFFER_SIZE 2048
 
-
+/************************************************************************/
+/* 基本的逻辑是：
+	1. 用户打开程序，显示登录界面，后台连接服务器
+	2. 用户输入用户名，点击登入，切换到游戏主界面
+	3. 用户选择房间进入，或者用户自己创建新房间
+	4. 进入甲板界面，准备开始游戏
+	5. 游戏结束，返回房间列表界面*/
+/************************************************************************/
 class GameRoom
 {
 public:
@@ -26,6 +33,8 @@ enum MessageType
 	//ILLEGAL = 0,
 	GET_ROOM_LIST = 1,      //获取房间列表
 	GET_ROOM_LIST_RESULT,
+	CREATE_PLAYER,			//创建玩家
+	CREATE_PLAYER_RESULT,
 	CREATE_ROOM,            //创建房间同时创建用户
 	CREATE_ROOM_RESULT,
 	ENTER_ROOM,             //进入房间同时创建用户
@@ -52,9 +61,22 @@ public:
 	void initNumbers(Ref* ref);
 	void increaseCount(Ref* ref);
 	void loadResource();
+
+	void connectWithServer();
 	void threadFunction();
 	void release();
+
+	void sendMessage(std::string message, MessageType type);
 	void handleMessage();
+
+	void createPlayer(std::string player);
+	void getRoomList();
+	void createRoom(std::string room);
+	void enterRoom(std::string room);
+	void ready();
+	void outCard(std::vector<PokerCard *> cards);
+
+	void handleCreatePlyaerResult();
 	void handleGetRoomListResult();
 	void handleCreateRoomResult();
 	void handleEnterRoomResult();
@@ -71,6 +93,7 @@ public:
 	int numberOfLoadRes;
 	int readBufLength;
 	int remainLength;
+	bool isWaitingCreate;
 	bool isConnected;
 	char readBuf[BUFFER_SIZE];
 	SOCKET sock;
@@ -81,6 +104,7 @@ public:
 	Vector<Sprite *> numberArray;
 	std::vector<std::string> split(std::string& str, char ch);
 	std::vector<GameRoom> roomList;
+	std::string player;
 	/** store all the judge function by their priority **/
 private:
 	GameManager();
