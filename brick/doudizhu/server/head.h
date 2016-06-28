@@ -6,6 +6,8 @@
 
 using namespace std;
 
+#define SERVER_HOST "0.0.0.0"
+#define SERVER_PORT 7777
 #define BUFFER_SIZE 2048
 class GameRoom;
 class Player;
@@ -38,9 +40,11 @@ enum MessageType
 	ILLEGAL = 0,
 	GET_ROOM_LIST = 1,	//获取房间列表
 	GET_ROOM_LIST_RESULT,
-	CREATE_ROOM,		//创建房间同时创建用户
+	CREATE_PLAYER,		//创建玩家
+	CREATE_PLAYER_RESULT,
+	CREATE_ROOM,		//创建房间
 	CREATE_ROOM_RESULT,
-	ENTER_ROOM,		//进入房间同时创建用户
+	ENTER_ROOM,		//进入房间
 	ENTER_ROOM_RESULT,
 	ENTER_ROOM_OTHERS,	//别人进入房间
 	READY,			//准备游戏
@@ -59,6 +63,8 @@ enum MessageType
  * 类型	1字节
  * 	获取房间列表：
  * 		NONE
+ * 	创建玩家
+ * 		玩家名字
  * 	创建房间
  * 		房间名称
  * 	进入房间：
@@ -76,6 +82,8 @@ enum MessageType
  * 类型	1字节
  * 	获取房间列表：
  * 		房间名称 空格分割
+ * 	创建玩家
+ * 		失败OR成功
  * 	创建房间：
  * 		失败OR成功
  * 	进入房间：
@@ -117,7 +125,7 @@ class Player
 {
 public:
 	int	identity;		//身份
-	int	ready;			//是否准备
+	bool	ready;			//是否准备
 	string 	playerName;
 	string	roomName;
 	char	readBuf[BUFFER_SIZE];	//每个玩家都有一个消息缓冲区
@@ -125,6 +133,7 @@ public:
 	int	fd;			//对应的socket描述符
 	int 	remain_length;
 
+	Player();
 	GameRoom* 	joinGame(string roomName);
 	int 		exitGame();
 };
@@ -145,6 +154,7 @@ void deletePlayer(Player* player);
 void sendRoomList(int fd);
 void handle_message(int fd);			//处理用户消息
 void handle_get_room_list(Player *player);	//获取房间列表处理函数
+void handle_create_player(Player* player);	//玩家注册处理函数
 void handle_create_room(Player* player);	//创建房间处理函数
 void handle_enter_room(Player *player);		//进入房间处理函数
 void handle_ready(Player *player);		//玩家准备处理函数
