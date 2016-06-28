@@ -1,0 +1,85 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BUFFER_SIZE	head.h	11;"	d
+CREATE_PLAYER	head.h	/^	CREATE_PLAYER,		\/\/创建玩家$/;"	e	enum:MessageType
+CREATE_PLAYER_RESULT	head.h	/^	CREATE_PLAYER_RESULT,$/;"	e	enum:MessageType
+CREATE_ROOM	head.h	/^	CREATE_ROOM,		\/\/创建房间$/;"	e	enum:MessageType
+CREATE_ROOM_RESULT	head.h	/^	CREATE_ROOM_RESULT,$/;"	e	enum:MessageType
+DAXIAOWANG	head.h	/^	DAXIAOWANG$/;"	e	enum:PokerType
+DIZHU	head.h	/^	DIZHU = 1,$/;"	e	enum:PlayerType
+EMPTY	head.h	/^	EMPTY,$/;"	e	enum:RoomFlag
+END_GAME	head.h	/^	END_GAME,		\/\/游戏结束$/;"	e	enum:MessageType
+ENTER_ROOM	head.h	/^	ENTER_ROOM,		\/\/进入房间$/;"	e	enum:MessageType
+ENTER_ROOM_OTHERS	head.h	/^	ENTER_ROOM_OTHERS,	\/\/别人进入房间$/;"	e	enum:MessageType
+ENTER_ROOM_RESULT	head.h	/^	ENTER_ROOM_RESULT,$/;"	e	enum:MessageType
+FANGKUAI	head.h	/^	FANGKUAI = 1,$/;"	e	enum:PokerType
+FULL	head.h	/^	FULL,$/;"	e	enum:RoomFlag
+GET_ROOM_LIST	head.h	/^	GET_ROOM_LIST = 1,	\/\/获取房间列表$/;"	e	enum:MessageType
+GET_ROOM_LIST_RESULT	head.h	/^	GET_ROOM_LIST_RESULT,$/;"	e	enum:MessageType
+GameRoom	head.cpp	/^GameRoom::GameRoom()$/;"	f	class:GameRoom
+GameRoom	head.cpp	/^GameRoom::GameRoom(string name)$/;"	f	class:GameRoom
+GameRoom	head.h	/^class GameRoom$/;"	c
+HEITAO	head.h	/^	HEITAO,$/;"	e	enum:PokerType
+HONGXIN	head.h	/^	HONGXIN,$/;"	e	enum:PokerType
+ILLEGAL	head.h	/^	ILLEGAL = 0,$/;"	e	enum:MessageType
+LEGAL	head.h	/^	LEGAL = 0,$/;"	e	enum:RoomFlag
+MEIHUA	head.h	/^	MEIHUA,$/;"	e	enum:PokerType
+MessageType	head.h	/^enum MessageType$/;"	g
+NONE	head.h	/^	NONE,$/;"	e	enum:RoomFlag
+NONGMING	head.h	/^	NONGMING,$/;"	e	enum:PlayerType
+OUT_CARD	head.h	/^	OUT_CARD,		\/\/自己出牌$/;"	e	enum:MessageType
+OUT_CARD_OTHERS	head.h	/^	OUT_CARD_OTHERS,	\/\/别人出牌$/;"	e	enum:MessageType
+OUT_CARD_RESULT	head.h	/^	OUT_CARD_RESULT,$/;"	e	enum:MessageType
+Player	head.cpp	/^Player::Player()$/;"	f	class:Player
+Player	head.h	/^class Player$/;"	c
+PlayerType	head.h	/^enum PlayerType$/;"	g
+PokerCard	head.h	/^class PokerCard$/;"	c
+PokerType	head.h	/^enum PokerType$/;"	g
+READY	head.h	/^	READY,			\/\/准备游戏$/;"	e	enum:MessageType
+READY_OTHERS	head.h	/^	READY_OTHERS,		\/\/别人准备$/;"	e	enum:MessageType
+READY_RESULT	head.h	/^	READY_RESULT,$/;"	e	enum:MessageType
+RoomFlag	head.h	/^enum RoomFlag$/;"	g
+SERVER_HOST	head.h	9;"	d
+SERVER_PORT	head.h	10;"	d
+START_GAME	head.h	/^	START_GAME,		\/\/开始游戏只能够从服务器发出$/;"	e	enum:MessageType
+UNDEFINED	head.h	/^	UNDEFINED,$/;"	e	enum:PlayerType
+addPlayer	head.cpp	/^Player* addPlayer(string name)$/;"	f
+currentPlayers	head.h	/^	int 	currentPlayers;$/;"	m	class:GameRoom
+exitGame	head.cpp	/^int Player::exitGame()$/;"	f	class:Player
+fd	head.h	/^	int	fd;			\/\/对应的socket描述符$/;"	m	class:Player
+handle_accept	main.cpp	/^void handle_accept(struct epoll_event ev, int epoll_fd)$/;"	f
+handle_create_player	main.cpp	/^void handle_create_player(Player* player)$/;"	f
+handle_create_room	main.cpp	/^void handle_create_room(Player* player)$/;"	f
+handle_enter_room	main.cpp	/^void handle_enter_room(Player* player)$/;"	f
+handle_get_room_list	main.cpp	/^void handle_get_room_list(Player* player)$/;"	f
+handle_message	main.cpp	/^void handle_message(int fd)$/;"	f
+handle_others	main.cpp	/^void handle_others(struct epoll_event ev, int epoll_fd)$/;"	f
+handle_ready	main.cpp	/^void handle_ready(Player* player)$/;"	f
+identity	head.h	/^	int	identity;		\/\/身份$/;"	m	class:Player
+isQueen	head.h	/^	bool isQueen()$/;"	f	class:PokerCard
+isRunning	head.h	/^	int	isRunning;$/;"	m	class:GameRoom
+joinGame	head.cpp	/^GameRoom *Player::joinGame(string roomName)$/;"	f	class:Player
+main	a.c	/^int main()$/;"	f
+main	main.cpp	/^int main()$/;"	f
+other_handle	a.c	/^void other_handle(struct evhttp_request *req, void *arg)$/;"	f
+playerMap	head.cpp	/^map<string, Player*> playerMap;$/;"	v
+playerName	head.h	/^	string 	playerName;$/;"	m	class:Player
+players	head.h	/^	Player*	players[3];$/;"	m	class:GameRoom
+readBuf	head.h	/^	char	readBuf[BUFFER_SIZE];	\/\/每个玩家都有一个消息缓冲区$/;"	m	class:Player
+readBufLen	head.h	/^	int	readBufLen;$/;"	m	class:Player
+ready	head.h	/^	int	ready;			\/\/是否准备$/;"	m	class:Player
+remain_length	head.h	/^	int 	remain_length;$/;"	m	class:Player
+roomMap	head.cpp	/^map<string, GameRoom *> roomMap;$/;"	v
+roomName	head.h	/^	string	roomName;$/;"	m	class:Player
+roomName	head.h	/^	string 	roomName;$/;"	m	class:GameRoom
+root_handle	a.c	/^void root_handle(struct evhttp_request *req, void *arg)$/;"	f
+sendMessage	main.cpp	/^void sendMessage(int fd, int type, string message)$/;"	f
+sendRoomList	main.cpp	/^void sendRoomList(int fd)$/;"	f
+socketMap	head.cpp	/^map<int, Player*> socketMap;$/;"	v
+type	head.h	/^	int	type;$/;"	m	class:PokerCard
+valueInAll	head.h	/^	int	valueInAll;$/;"	m	class:PokerCard
+valueInType	head.h	/^	int	valueInType;$/;"	m	class:PokerCard

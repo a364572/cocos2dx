@@ -19,6 +19,17 @@ GameRoom::GameRoom(string name)
 	memset(players, 0, sizeof(Player *) * 3);
 }
 
+Player::Player()
+{
+	playerName = "";
+	roomName = "";
+	identity = UNDEFINED;
+	ready = false;
+	readBufLen = 0;
+	remain_length = 0;
+	fd = 0;
+}
+
 /** 创建玩家 **/
 Player* addPlayer(string name)
 {
@@ -28,11 +39,6 @@ Player* addPlayer(string name)
 	}
 	Player* player = new Player();
 	player->playerName = name;
-	player->identity= UNDEFINED;
-	player->ready = 0;
-	player->readBufLen = 0;
-	player->fd = 0;
-	player->remain_length = 0;
 	playerMap[name] = player;
 	memset(player->readBuf, 0, sizeof(player->readBuf));
 	return player;
@@ -56,6 +62,8 @@ GameRoom *Player::joinGame(string roomName)
 	{
 		if(room->players[i] == NULL)
 		{
+			printf("玩家%s加入房间%s\n", playerName.data(), roomName.data());
+			this->roomName = roomName;
 			room->players[i] = this;
 			room->currentPlayers = room->currentPlayers + 1;
 			return room;
