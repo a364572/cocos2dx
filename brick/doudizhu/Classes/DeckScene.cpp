@@ -33,18 +33,18 @@ bool DeckScene::init()
 		blackHorizon = 0;
 	}
 
+	progress = Sprite::create("progress_bg.png");
+	addChild(progress);
 	progressBar = ProgressTimer::create(Sprite::create("progress.png"));
 	progressBar->setAnchorPoint(Vec2(0.5, 0.5));
 	progressBar->setType(ProgressTimer::Type::BAR);
 	progressBar->setMidpoint(Vec2(0, 0.5));
 	progressBar->setBarChangeRate(Vec2(1, 0));
 	progressBar->setPercentage(0);
-
-	progress = Sprite::create("progress_bg.png");
 	progressBar->setPosition(progress->getContentSize().width / 2, progress->getContentSize().height / 2);
+
 	progress->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 	progress->addChild(progressBar);
-	addChild(progress);
 	
 	loadLabel = Label::createWithTTF("load", "fonts/Marker Felt.ttf", 40);
 	loadLabel->setColor(Color3B(126, 106, 79));

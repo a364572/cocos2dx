@@ -22,16 +22,23 @@ public:
 	void enterRoom();
 	void createRoom();
 	void refreshRoom();
+	void refreshListView();
 	
 	void roomListSelected(Ref* ref, ui::ListView::EventType type);
 	void roomListScrolled(Ref* ref, ui::ScrollView::EventType type);
 
 	virtual bool init();
+	virtual void update(float delta);
 
 	int selectIndex;
+	int listFlashCount;
+	int enterFlashCount;
+	bool isWaitingList;
+	bool isWaitingEnter;
 	Color3B selectColor;
 	Size visible;
 	Point origin;
 	TableView* roomTable;
 	Menu* mainMenu;
+	ui::ListView* listView;
 };

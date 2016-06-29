@@ -1,6 +1,6 @@
 #include "LoginScene.h"
 #include "GameManager.h"
-#include "MainScene.h"
+#include "GameRoomScene.h"
 
 bool LoginScene::init()
 {
@@ -16,12 +16,11 @@ bool LoginScene::init()
 	bg->setPosition(visible.width / 2 + origin.x, visible.height / 2 + origin.y);
 	addChild(bg);
 
-//	auto deleg = CurTextField::create();
 	this->inputText = TextFieldTTF::textFieldWithPlaceHolder("Input name", "arial", 25);
 	inputText->setPosition(Point(origin.x + visible.width / 2, origin.y + visible.height * 3 / 4));
 	addChild(inputText);
 
-	//登录按钮
+	//登录按钮 点击之后尝试注册
 	loginBtn = Sprite::create("blue_btn_ok.png");
 	loginBtn ->setPosition(inputText->getPositionX() + 200, inputText->getPositionY());
 	addChild(loginBtn);
@@ -31,7 +30,6 @@ bool LoginScene::init()
 	listen->onTouchMoved = CC_CALLBACK_2(LoginScene::onTouchMoved, this);
 	listen->onTouchEnded = CC_CALLBACK_2(LoginScene::onTouchEnded, this);
 	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
-
 
 	return true;
 }
@@ -50,6 +48,7 @@ bool LoginScene::onTouchBegan(Touch * touch, Event * event)
 	{
 		return false;
 	}
+	//点击的是输入框
 	if (inputText->getBoundingBox().containsPoint(touch->getLocation()))
 	{
 		inputText->attachWithIME();
@@ -57,6 +56,7 @@ bool LoginScene::onTouchBegan(Touch * touch, Event * event)
 	else
 	{
 		inputText->detachWithIME();
+		//点击的是登录按钮
 		if (loginBtn->getBoundingBox().containsPoint(touch->getLocation()) && !isConnecting)
 		{
 			auto name = inputText->getString();
@@ -75,6 +75,7 @@ bool LoginScene::onTouchBegan(Touch * touch, Event * event)
 			checkCount = 0;
 			isConnecting = true;
 
+			//启动联网进程 同时启动定时器检查连接状态 成功之后切换场景
 			auto manager = GameManager::getInstance();
 			manager->player = name;
 			manager->connectWithServer();
@@ -92,13 +93,15 @@ void LoginScene::onTouchEnded(Touch * touch, Event * event)
 {
 }
 
+//定时器检查连接状态 连接成功之后跳到房间界面
 void LoginScene::checkStatus(float time)
 {
 	if (GameManager::getInstance()->isConnected)
 	{
 		unschedule(schedule_selector(LoginScene::checkStatus));
 		isConnecting = false;
-		Director::getInstance()->runWithScene(MainScene::createScene());
+		checkCount = 0;
+		Director::getInstance()->replaceScene(GameRoomScene::createScene());
 		return;
 	}
 	checkCount++;
@@ -107,47 +110,7 @@ void LoginScene::checkStatus(float time)
 		MessageBox("Connect Failed!", "Error");
 		unschedule(schedule_selector(LoginScene::checkStatus));
 		isConnecting = false;
+		checkCount = 0;
 		GameManager::getInstance()->player = "";
 	}
-}
-
-CurTextField * CurTextField::create()
-{
-	auto field = new CurTextField();
-	field->autorelease();
-	return field;
-}
-
-bool CurTextField::onTextFieldAttachWithIME(TextFieldTTF * pSender)
-{
-	log("Attach IME");
-	return false;
-}
-
-bool CurTextField::onTextFieldDetachWithIME(TextFieldTTF * pSender)
-{
-	log("Detach IME");
-	return false;
-}
-
-bool CurTextField::onTextFieldInsertText(TextFieldTTF * pSender, const char * text, size_t len)
-{
-	log("insert text %s", text);
-	return false;
-}
-
-bool CurTextField::onTextFieldDeleteBackward(TextFieldTTF * pSender, const char * text, size_t len)
-{
-	log("delete text %s", text);
-	return false;
-}
-
-void CurTextField::keyboardWillShow(IMEKeyboardNotificationInfo & info)
-{
-	log("keyBorard will show");
-}
-
-void CurTextField::keyboardWillHide(IMEKeyboardNotificationInfo & info)
-{
-	log("keyBorard will hide");
 }

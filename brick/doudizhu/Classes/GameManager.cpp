@@ -33,7 +33,7 @@ void GameManager::connectWithServer()
 		return;
 	}
 	//创建后台线程和服务器进行通信
-	instance->socketThread = std::thread(&GameManager::threadFunction);
+	instance->socketThread = std::thread(&GameManager::threadFunction, this);
 	instance->socketThread.detach();
 
 }
@@ -46,7 +46,7 @@ void GameManager::threadFunction()
 	int err = WSAStartup(version, &wsaData);
 	if (err != 0)
 	{
-		log("Failed to initilize Win Socket!");
+		log("Failed to initialize Win Socket!");
 		return;
 	}
 	if (LOBYTE(wsaData.wVersion) != 1 || HIBYTE(wsaData.wVersion) != 1)
@@ -76,15 +76,14 @@ void GameManager::threadFunction()
 	log("Connected with %s:%d", SERVER_HOST, SERVER_PORT);
 	remainLength = 0;
 	readBufLength = 0;
-	isConnected = true;
 
-	//将socket设为
+	//首先向服务器发送创建玩家信息,创建成功之后才将连接置为true
+	log("Player:%s", player.data());
+	createPlayer(player);
 
-	//首先向服务器发送注册信息
-	createRoom(player);
-
+	log("Ready to receive message!");
 	char buf[1];
-	while (isConnected)
+	while (isConnected || isWaitingPlayer)
 	{
 		//重新接收消息
 		if (remainLength == 0) {
@@ -92,6 +91,7 @@ void GameManager::threadFunction()
 			err = recv(sock, buf, 1, 0);
 			if (err < 0)
 			{
+				log("Disconnected!");
 				release();
 				break;
 			}
@@ -99,8 +99,10 @@ void GameManager::threadFunction()
 			{
 				continue;
 			}
-			int msgLen = buf[0];
+			int msgLen = buf[0] - 1;
 			remainLength = msgLen;
+			readBufLength = 0;
+			log("receive new message length %d", msgLen + 1);
 		}
 		//继续接收消息
 		else
@@ -117,6 +119,7 @@ void GameManager::threadFunction()
 			}
 			readBufLength += err;
 			remainLength -= err;
+			log("receive %d more message", err);
 		}
 		if (remainLength == 0)
 		{
@@ -127,17 +130,18 @@ void GameManager::threadFunction()
 }
 void GameManager::sendMessage(std::string message, MessageType type)
 {
+	//消息长度包括类型
 	char ch = type;
 	message = ch + message;
 	ch = message.size();
-	if (ch > 255)
+	if (ch > 254)
 	{
 		MessageBox("消息内容过长", "错误");
 		return;
 	}
 
 	message = ch + message;
-	if (isConnected)
+	if (isConnected || isWaitingPlayer)
 	{
 		int len = 0;
 		int res = 0;
@@ -151,6 +155,7 @@ void GameManager::sendMessage(std::string message, MessageType type)
 			}
 			len += res;
 		}
+		log("send success. length:%d", message.size());
 	}
 
 }
@@ -160,18 +165,23 @@ void GameManager::release()
 	closesocket(sock);
 	sock = -1;
 	isConnected = false;
-	isWaitingCreate = false;
+	isWaitingPlayer = false;
+	isWaitingRoom = false;
 	remainLength = 0;
 	readBufLength = 0;
 }
 void GameManager::handleMessage()
 {
-	readBuf[readBufLength] = '/0';
+	readBuf[readBufLength] = '\0';
 	std::string str = readBuf + 1;
 	int msgType = readBuf[0];
+	log("Receive new message type %d", msgType);
 	switch (msgType) {
 	case GET_ROOM_LIST_RESULT:
 		handleGetRoomListResult();
+		break;
+	case CREATE_PLAYER_RESULT:
+		handleCreatePlayerResult();
 		break;
 	case CREATE_ROOM_RESULT:
 		handleCreateRoomResult();
@@ -207,21 +217,38 @@ void GameManager::handleMessage()
 
 void GameManager::createPlayer(std::string player)
 {
+	this->isWaitingPlayer = true;
+	sendMessage(player, CREATE_PLAYER);
 }
 
 void GameManager::getRoomList()
 {
+	if (this->isWaitingList > 0)
+	{
+		return;
+	}
+	this->roomList.clear();
+	this->isWaitingList = 1;
 	sendMessage("", GET_ROOM_LIST);
 }
 
 void GameManager::createRoom(std::string room)
 {
-	isWaitingCreate = true;
+	if (this->isWaitingRoom > 0)
+	{
+		return;
+	}
+	this->isWaitingRoom = 1;
 	sendMessage(room, CREATE_ROOM);
 }
 
 void GameManager::enterRoom(std::string room)
 {
+	if (this->isWaitingRoom > 0)
+	{
+		return;
+	}
+	this->isWaitingRoom = 1;
 	sendMessage(room, ENTER_ROOM);
 }
 
@@ -242,35 +269,82 @@ void GameManager::outCard(std::vector<PokerCard *> cards)
 	sendMessage(msg, OUT_CARD);
 }
 
-void GameManager::handleCreatePlyaerResult()
+void GameManager::handleCreatePlayerResult()
 {
-
+	if (isWaitingPlayer)
+	{
+		isWaitingPlayer = false;
+		std::string flag = readBuf + 1;
+		if (flag == "1")
+		{
+			log("create player success");
+			isConnected = true;
+		}
+		else
+		{
+			log("Failed to create player because length %d %s!", flag.size(), flag.data());
+		}
+	}
+	log("No waiting for player");
 }
 
 void GameManager::handleGetRoomListResult()
 {
+	//将字符串分割 更新房间列表数据
 	std::string list(readBuf + 1);
-	auto rooms = split(list, '\n');
+	auto rooms = splitString(list, '\n');
 	for (auto str : rooms)
 	{
-		auto result = split(str, ' ');
+		auto result = splitString(str, ' ');
+		if (result.size() >= 3)
+		{
+			int count;
+			bool inGame;
+			std::stringstream ss;
+			ss << result[1];
+			ss >> count;
 
+			ss.clear();
+			ss << result[2];
+			ss >> inGame;
+			GameRoom room(result[0], count, inGame);
+			roomList.push_back(room);
+		}
 	}
+	log("Current rooms %d", roomList.size());
+	this->isWaitingList = 2;
 }
 void GameManager::handleCreateRoomResult()
 {
-	if (isWaitingCreate)
+	if (isWaitingRoom == 1)
 	{
-		isWaitingCreate = false;
 		std::string flag = readBuf + 1;
 		if (flag == "1")
 		{
-			Director::getInstance()->replaceScene(TransitionFadeDown::create(3.0f, DeckScene::createScene()));
+			isWaitingRoom = 2;
+			roomName = player;
+		}
+		else
+		{
+			isWaitingRoom = 3;
 		}
 	}
 }
 void GameManager::handleEnterRoomResult()
 {
+	if (isWaitingRoom == 1)
+	{
+		std::string flag = readBuf + 1;
+		if (flag.size() > 0)
+		{
+			isWaitingRoom = 2;
+			roomName = flag;
+		}
+		else
+		{
+			isWaitingRoom = 3;
+		}
+	}
 }
 void GameManager::handleEnterRoomOthers()
 {
@@ -349,7 +423,7 @@ void GameManager::initNumbers(Ref * ref)
 	increaseCount(ref);
 }
 
-std::vector<std::string> GameManager::split(std::string & str, char ch)
+std::vector<std::string> GameManager::splitString(std::string & str, char ch)
 {
 	int prev = 0;
 	std::vector<std::string> result;
@@ -370,34 +444,35 @@ std::vector<std::string> GameManager::split(std::string & str, char ch)
 
 GameManager::GameManager()
 {
-	//预加载资源
-	//instance = nullptr;
+	//初始化变量
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
 	isConnected = false;
-	isWaitingCreate = false;
+	isWaitingPlayer = false;
+	isWaitingRoom = 0;
+	isWaitingList = 0;
 	readBufLength = 0;
 	remainLength = 0;
 	srand(time(nullptr));
 
-	roomList.push_back(GameRoom("room1", 2));
-	roomList.push_back(GameRoom("room2", 3));
-	roomList.push_back(GameRoom("room3", 2));
-	roomList.push_back(GameRoom("room4", 1));
-	roomList.push_back(GameRoom("room5", 1));
-	roomList.push_back(GameRoom("room6", 1));
-	roomList.push_back(GameRoom("room7", 1));
-	roomList.push_back(GameRoom("room8", 1));
-	roomList.push_back(GameRoom("room9", 1));
-	roomList.push_back(GameRoom("room10", 1));
-	roomList.push_back(GameRoom("room11", 1));
-	roomList.push_back(GameRoom("room12", 1));
-	roomList.push_back(GameRoom("room13", 1));
-	roomList.push_back(GameRoom("room14", 1));
-	roomList.push_back(GameRoom("room15", 1));
-	roomList.push_back(GameRoom("room16", 1));
-	roomList.push_back(GameRoom("room17", 1));
-	roomList.push_back(GameRoom("room18", 1));
-	roomList.push_back(GameRoom("room19", 1));
-	roomList.push_back(GameRoom("room20", 1));
+	//roomList.push_back(GameRoom("room1", 2));
+	//roomList.push_back(GameRoom("room2", 3));
+	//roomList.push_back(GameRoom("room3", 2));
+	//roomList.push_back(GameRoom("room4", 1));
+	//roomList.push_back(GameRoom("room5", 1));
+	//roomList.push_back(GameRoom("room6", 1));
+	//roomList.push_back(GameRoom("room7", 1));
+	//roomList.push_back(GameRoom("room8", 1));
+	//roomList.push_back(GameRoom("room9", 1));
+	//roomList.push_back(GameRoom("room10", 1));
+	//roomList.push_back(GameRoom("room11", 1));
+	//roomList.push_back(GameRoom("room12", 1));
+	//roomList.push_back(GameRoom("room13", 1));
+	//roomList.push_back(GameRoom("room14", 1));
+	//roomList.push_back(GameRoom("room15", 1));
+	//roomList.push_back(GameRoom("room16", 1));
+	//roomList.push_back(GameRoom("room17", 1));
+	//roomList.push_back(GameRoom("room18", 1));
+	//roomList.push_back(GameRoom("room19", 1));
+	//roomList.push_back(GameRoom("room20", 1));
 }

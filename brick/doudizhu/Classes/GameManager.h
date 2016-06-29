@@ -9,6 +9,8 @@ USING_NS_CC;
 #define SERVER_HOST "202.197.66.34"
 #define SERVER_PORT 7777
 #define BUFFER_SIZE 2048
+#define CONNECT_TIME_OUT	10000
+#define SCHEDULE_INTERVAL	1000
 
 /************************************************************************/
 /* 基本的逻辑是：
@@ -22,10 +24,17 @@ class GameRoom
 {
 public:
 	GameRoom() {}
-	GameRoom(std::string name, int count) { this->name = name; this->count = count; selected = false; };
+	GameRoom(std::string name, int count, bool inGame) 
+	{ 
+		this->name = name; 
+		this->count = count; 
+		this->selected = false;
+		this->inGame = inGame;
+	};
 	std::string name;
 	int count;
 	bool selected;
+	bool inGame;
 };
 
 enum MessageType
@@ -76,7 +85,7 @@ public:
 	void ready();
 	void outCard(std::vector<PokerCard *> cards);
 
-	void handleCreatePlyaerResult();
+	void handleCreatePlayerResult();
 	void handleGetRoomListResult();
 	void handleCreateRoomResult();
 	void handleEnterRoomResult();
@@ -87,13 +96,16 @@ public:
 	void handleOutCardOthers();
 	void handleStartGame();
 	void handleEndGame();
+	std::vector<std::string> splitString(std::string& str, char ch);
 
 	static GameManager* instance;
 	int numberOfTotalRes;
 	int numberOfLoadRes;
 	int readBufLength;
 	int remainLength;
-	bool isWaitingCreate;
+	bool isWaitingPlayer; //0表示没在等 1表示在等 2表示成功 3表示失败
+	int isWaitingRoom;
+	int isWaitingList;
 	bool isConnected;
 	char readBuf[BUFFER_SIZE];
 	SOCKET sock;
@@ -102,10 +114,9 @@ public:
 
 	Vector<PokerCard *> rawCardArray;
 	Vector<Sprite *> numberArray;
-	std::vector<std::string> split(std::string& str, char ch);
 	std::vector<GameRoom> roomList;
 	std::string player;
-	/** store all the judge function by their priority **/
+	std::string roomName;
 private:
 	GameManager();
 	
