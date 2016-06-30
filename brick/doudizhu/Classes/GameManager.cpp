@@ -165,7 +165,7 @@ void GameManager::release()
 	closesocket(sock);
 	sock = -1;
 	isConnected = false;
-	isWaitingPlayer = false;
+	isWaitingPlayer = -1;
 	isWaitingRoom = false;
 	remainLength = 0;
 	readBufLength = 0;
@@ -217,7 +217,12 @@ void GameManager::handleMessage()
 
 void GameManager::createPlayer(std::string player)
 {
-	this->isWaitingPlayer = true;
+	if (isWaitingPlayer > 0)
+	{
+		log("Warning: waiting to create player!");
+		return;
+	}
+	this->isWaitingPlayer = 1;
 	sendMessage(player, CREATE_PLAYER);
 }
 
@@ -252,8 +257,13 @@ void GameManager::enterRoom(std::string room)
 	sendMessage(room, ENTER_ROOM);
 }
 
-void GameManager::ready()
+void GameManager::readyGame()
 {
+	if (this->isWaitingReady > 0)
+	{
+		return;
+	}
+	this->isWaitingReady = 1;
 	sendMessage("", READY);
 }
 
@@ -271,21 +281,21 @@ void GameManager::outCard(std::vector<PokerCard *> cards)
 
 void GameManager::handleCreatePlayerResult()
 {
-	if (isWaitingPlayer)
+	if (isWaitingPlayer == 1)
 	{
-		isWaitingPlayer = false;
 		std::string flag = readBuf + 1;
 		if (flag == "1")
 		{
 			log("create player success");
+			isWaitingPlayer = 2;
 			isConnected = true;
 		}
 		else
 		{
+			isWaitingPlayer = 3;
 			log("Failed to create player because length %d %s!", flag.size(), flag.data());
 		}
 	}
-	log("No waiting for player");
 }
 
 void GameManager::handleGetRoomListResult()
@@ -318,14 +328,16 @@ void GameManager::handleCreateRoomResult()
 {
 	if (isWaitingRoom == 1)
 	{
-		std::string flag = readBuf + 1;
-		if (flag == "1")
+		auto res = splitString(std::string(readBuf + 1), '\n');
+		if (res.size() > 0)
 		{
+			roomName = res[0];
+			serverPosition = atoi(res[1].data());
 			isWaitingRoom = 2;
-			roomName = player;
 		}
 		else
 		{
+			serverPosition = -1;
 			isWaitingRoom = 3;
 		}
 	}
@@ -334,14 +346,32 @@ void GameManager::handleEnterRoomResult()
 {
 	if (isWaitingRoom == 1)
 	{
-		std::string flag = readBuf + 1;
-		if (flag.size() > 0)
+		//消息内容：房间名称 换行 位置 然后每一行是一个玩家的信息
+		auto res = splitString(std::string(readBuf + 1), '\n');
+		if (res.size() > 0)
 		{
+			roomName = res[0];
+			serverPosition = atoi(res[1].data());
 			isWaitingRoom = 2;
-			roomName = flag;
+
+			//遍历所有的玩家列表
+			for (int i = 2; i < res.size(); i++)
+			{
+				auto result = splitString(res[i], ' ');
+				if (result.size() == 3)
+				{
+					SimplePlayer simplePlayer = {result[0], atoi(result[1].data()), false};
+					enterPlayerList.push_back(simplePlayer);
+					if (result[2] == "1")
+					{
+						readyPlayerList.push_back(result[0]);
+					}
+				}
+			}
 		}
 		else
 		{
+			serverPosition = -1;
 			isWaitingRoom = 3;
 		}
 	}
@@ -351,9 +381,28 @@ void GameManager::handleEnterRoomOthers()
 }
 void GameManager::handleReadyResult()
 {
+	if (isWaitingReady == 1)
+	{
+		std::string flag(readBuf + 1);
+		if (flag == "1")
+		{
+			isWaitingReady = 2;
+		}
+		else
+		{
+			isWaitingReady = 3;
+		}
+	}
 }
+
 void GameManager::handleReadyOthers()
 {
+	if (isInGame)
+	{
+		return;
+	}
+	//把准备好的玩家名字放入链表中
+	readyPlayerList.push_back(readBuf + 1);
 }
 void GameManager::handleOutCardResult()
 {
@@ -363,6 +412,12 @@ void GameManager::handleOutCardOthers()
 }
 void GameManager::handleStartGame()
 {
+	if (isInGame != 0)
+	{
+		log("Error: The game has already started!");
+		return;
+	}
+	isInGame = 1;
 }
 void GameManager::handleEndGame()
 {
@@ -448,9 +503,11 @@ GameManager::GameManager()
 	numberOfTotalRes = 7;
 	numberOfLoadRes = 0;
 	isConnected = false;
-	isWaitingPlayer = false;
+	isWaitingPlayer = -1;
 	isWaitingRoom = 0;
 	isWaitingList = 0;
+	isWaitingReady = 0;
+	isInGame = 0;
 	readBufLength = 0;
 	remainLength = 0;
 	srand(time(nullptr));

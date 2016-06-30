@@ -15,9 +15,9 @@ bool DeckScene::init()
 		return false;
 	}
 
+	//背景和参数相关
 	visible = Director::getInstance()->getVisibleSize();
 	origin = Director::getInstance()->getVisibleOrigin();
-	//首先预加载资源
 	
 	auto bg = Sprite::create("background.png");
 	bg->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
@@ -32,7 +32,11 @@ bool DeckScene::init()
 	{
 		blackHorizon = 0;
 	}
+	margin_top = 50 + blackVertical;
+	margin_right = 50 + blackHorizon;
+	margin_left = 50 + blackHorizon;
 
+	//进度条 预加载图片
 	progress = Sprite::create("progress_bg.png");
 	addChild(progress);
 	progressBar = ProgressTimer::create(Sprite::create("progress.png"));
@@ -53,10 +57,15 @@ bool DeckScene::init()
 	loadLabel->setPosition(progress->getPosition() + Vec2(0, 50));
 	addChild(loadLabel);
 
+	//初始化变量
 	readyMenu = nullptr;
 	callMenu = nullptr;
 	robMenu = nullptr;
 	outCardMenu = nullptr;
+	player = player1 = player2 = nullptr;
+	readyFlag = readyFlag1 = readyFlag2 = nullptr;
+	bottomCard1 = bottomCard2 = bottomCard3 = nullptr;
+	pokerBack1 = pokerBack2 = pokerBack3 = pokerBack4 = pokerBack5 = nullptr;
 	isInGame = false;
 	currentPokerType = PokerArrayType::ILLEGAL;
 
@@ -65,118 +74,129 @@ bool DeckScene::init()
 	return true;
 }
 
-//在界面上显示玩家 准备开始游戏
-void DeckScene::initDeck()
+//显示界面和玩家
+void DeckScene::initDeck(bool first)
 {
-	log("Display Card!");
-	for (PokerCard *card : cardArray) {
-		card->removeFromParent();
-	}
-	cardArray.clear();
-	int row = -1;
-	int col = 0;
-	for (int i = 0; i < 54; i++)
+	//清除之前的牌
+	//for (PokerCard *card : cardArray) {
+	//	card->removeFromParent();
+	//}
+	//cardArray.clear();
+
+	//int row = -1;
+	//int col = 0;
+	//for (int i = 0; i < 54; i++)
+	//{
+	//	auto card = GameManager::getInstance()->rawCardArray.at(i);
+	//	card->setAnchorPoint(Vec2(0, 0));
+	//	cardArray.pushBack(card);
+	//	if (i % 13 == 0) {
+	//		row++;
+	//		col = 0;
+	//	}
+	//	card->setPosition(col * card->getContentSize().width, row * card->getContentSize().height);
+	//	col++;
+	//}
+	//首次初始化界面
+	if (first)
 	{
-		auto card = GameManager::getInstance()->rawCardArray.at(i);
-		card->setAnchorPoint(Vec2(0, 0));
-		cardArray.pushBack(card);
-		if (i % 13 == 0) {
-			row++;
-			col = 0;
-		}
-		card->setPosition(col * card->getContentSize().width, row * card->getContentSize().height);
-		//addChild(card);
-		col++;
-	}
+		//在界面上显示头像
+		auto playerBackGold = Sprite::create("logo_active.png");
+		auto playerBackGray1 = Sprite::create("logo_deactive.png");
+		auto playerBackGray2 = Sprite::create("logo_deactive.png");
+		playerBackGold->setPosition(0, 0);
+		playerBackGold->setAnchorPoint(Vec2(0, 0));
+		playerBackGray1->setPosition(0, 0);
+		playerBackGray1->setAnchorPoint(Vec2(0, 0));
+		playerBackGray2->setPosition(0, 0);
+		playerBackGray2->setAnchorPoint(Vec2(0, 0));
 
-	float margin_top = 50 + blackVertical;
-	float margin_right = 50 + blackHorizon;
-	float margin_left = 50 + blackHorizon;
-	auto playerBackGold = Sprite::create("logo_active.png");
-	auto playerBackGray1 = Sprite::create("logo_deactive.png");
-	auto playerBackGray2 = Sprite::create("logo_deactive.png");
-	playerBackGold ->setPosition(0, 0);
-	playerBackGold ->setAnchorPoint(Vec2(0, 0));
-	playerBackGray1->setPosition(0, 0);
-	playerBackGray1->setAnchorPoint(Vec2(0, 0));
-	playerBackGray2->setPosition(0, 0);
-	playerBackGray2->setAnchorPoint(Vec2(0, 0));
+		//创建自己
+		player = Player::create(GameManager::getInstance()->player, 0);
+		player->addChild(playerBackGold);
+		player->setAnchorPoint(Vec2(0, 1));
+		player->setPosition(origin.x + margin_left, origin.y + visible.height / 2 - 50);
+		player->setserverPos(GameManager::getInstance()->serverPosition);
+		addChild(player);
 
-	//initiate the player with the unknown photo
-	player = Player::create("Myself");
-	player1 = Player::create("Player1");
-	player2 = Player::create("Player2");
+		//创建左边的邻居
+		player1 = Player::create("left", 1);
+		player1->addChild(playerBackGray1);
+		player1->setAnchorPoint(Vec2(0, 1));
+		player1->setPosition(origin.x + margin_left, origin.y + visible.height - margin_top);
+		addChild(player1);
 
-	player->addChild(playerBackGold);
-	player1->addChild(playerBackGray1);
-	player2->addChild(playerBackGray2);
+		//创建右边的邻居
+		player2 = Player::create("right", 2);
+		player2->addChild(playerBackGray2);
+		player2->setAnchorPoint(Vec2(1, 1));
+		player2->setPosition(origin.x + visible.width - margin_right, origin.y + visible.height - margin_top);
+		addChild(player2);
 
-	player->setAnchorPoint(Vec2(0, 1));
-	player->setPosition(origin.x + margin_left, origin.y + visible.height / 2 - 50);
 
-	player1->setAnchorPoint(Vec2(0, 1));
-	player1->setPosition(origin.x + margin_left, origin.y + visible.height - margin_top);
+		//显示底牌
+		pokerBack1 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+		pokerBack2 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+		pokerBack3 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+		pokerBack4 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+		pokerBack5 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
 
-	player2->setAnchorPoint(Vec2(1, 1));
-	player2->setPosition(origin.x + visible.width - margin_right, origin.y + visible.height - margin_top);
+		pokerBack1->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
+		pokerBack2->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
+		pokerBack3->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
+		pokerBack4->setScale(player1->getContentSize().width / pokerBack1->getContentSize().width);
+		pokerBack5->setScale(player1->getContentSize().width / pokerBack1->getContentSize().width);
 
-	addChild(player);
-	addChild(player1);
-	addChild(player2);
-	auto exitBtn = MenuItemImage::create("game_exit.png", "game_exit.png", CC_CALLBACK_0(DeckScene::exitGame, this));
-	auto setBtn = MenuItemImage::create("game_setting.png", "game_setting.png", CC_CALLBACK_0(DeckScene::displaySetting, this));
-	auto menu = Menu::create(exitBtn, setBtn, nullptr);
-	menu->alignItemsHorizontallyWithPadding(20);
-	menu->setAnchorPoint(Vec2(0, 0.5));
-	menu->setPosition(player1->getPositionX() + player1->getContentSize().width + 150, player1->getPositionY() - player1->getContentSize().height / 2);
+		pokerBack2->setAnchorPoint(Vec2(0.5, 1));
+		pokerBack2->setPosition(origin.x + visible.width / 2, origin.y + visible.height - margin_top);
+		pokerBack1->setAnchorPoint(Vec2(0.5, 1));
+		pokerBack1->setPosition(pokerBack2->getPosition() - Point(pokerBack2->getContentSize().width, 0));
+		pokerBack3->setAnchorPoint(Vec2(0.5, 1));
+		pokerBack3->setPosition(pokerBack2->getPosition() + Point(pokerBack2->getContentSize().width, 0));
 
-	pokerBack1 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	pokerBack2 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	pokerBack3 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	pokerBack4 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
-	pokerBack5 = Sprite::createWithTexture(Director::getInstance()->getTextureCache()->getTextureForKey("poke_back_header.png"));
+		pokerBack4->setAnchorPoint(Vec2(0, 1));
+		pokerBack4->setPosition(player1->getPositionX(), player1->getPositionY() - player1->getContentSize().height - 20);
+		pokerBack5->setAnchorPoint(Vec2(1, 1));
+		pokerBack5->setPosition(player2->getPositionX(), player2->getPositionY() - player2->getContentSize().height - 20);
 
-	pokerBack1->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
-	pokerBack2->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
-	pokerBack3->setScale(player1->getContentSize().height / pokerBack1->getContentSize().height);
-	pokerBack4->setScale(player1->getContentSize().width / pokerBack1->getContentSize().width);
-	pokerBack5->setScale(player1->getContentSize().width / pokerBack1->getContentSize().width);
+		pokerBack1->setVisible(false);
+		pokerBack2->setVisible(false);
+		pokerBack3->setVisible(false);
+		pokerBack4->setVisible(false);
+		pokerBack5->setVisible(false);
 
-	pokerBack2->setAnchorPoint(Vec2(0.5, 1));
-	pokerBack2->setPosition(origin.x + visible.width / 2, origin.y + visible.height - margin_top);
-	pokerBack1->setAnchorPoint(Vec2(0.5, 1));
-	pokerBack1->setPosition(pokerBack2->getPosition() - Point(pokerBack2->getContentSize().width, 0));
-	pokerBack3->setAnchorPoint(Vec2(0.5, 1));
-	pokerBack3->setPosition(pokerBack2->getPosition() + Point(pokerBack2->getContentSize().width, 0));
+		addChild(pokerBack1);
+		addChild(pokerBack2);
+		addChild(pokerBack3);
+		addChild(pokerBack4);
+		addChild(pokerBack5);
 
-	pokerBack4->setAnchorPoint(Vec2(0, 1));
-	pokerBack4->setPosition(player1->getPositionX(), player1->getPositionY() - player1->getContentSize().height - 20);
-	pokerBack5->setAnchorPoint(Vec2(1, 1));
-	pokerBack5->setPosition(player2->getPositionX(), player2->getPositionY() - player2->getContentSize().height - 20);
-	
-	addChild(pokerBack1);
-	addChild(pokerBack2);
-	addChild(pokerBack3);
-	addChild(pokerBack4);
-	addChild(pokerBack5);
+		//显示设置和退出按钮
+		auto exitBtn = MenuItemImage::create("game_exit.png", "game_exit.png", CC_CALLBACK_0(DeckScene::exitGame, this));
+		auto setBtn = MenuItemImage::create("game_setting.png", "game_setting.png", CC_CALLBACK_0(DeckScene::displaySetting, this));
+		setMenu = Menu::create(exitBtn, setBtn, nullptr);
+		setMenu->alignItemsHorizontallyWithPadding(20);
+		setMenu->setAnchorPoint(Vec2(0, 0.5));
+		setMenu->setPosition(player1->getPositionX() + player1->getContentSize().width + 150, player1->getPositionY() - player1->getContentSize().height / 2);
+		addChild(setMenu);
 
-	if (readyMenu == nullptr) {
-		auto readyBtn = MenuItemImage::create("big_green_btn.png", "big_green_btn_down.png", CC_CALLBACK_0(DeckScene::startGame, this));
+		//显示准备游戏菜单
+		auto readyBtn = MenuItemImage::create("big_green_btn.png", "big_green_btn_down.png", CC_CALLBACK_0(DeckScene::readyGame, this));
 		readyMenu = Menu::create(readyBtn, nullptr);
 		readyMenu->alignItemsVertically();
 		readyMenu->setAnchorPoint(Vec2(0.5, 0.5));
 		readyMenu->setPosition(origin.x + visible.width / 2, origin.y + visible.height / 2);
 		addChild(readyMenu);
+
+		//注册监听事件
+		auto listen = EventListenerTouchOneByOne::create();
+		listen->onTouchBegan = CC_CALLBACK_2(DeckScene::onTouchBegan, this);
+		listen->onTouchMoved = CC_CALLBACK_2(DeckScene::onTouchMoved, this);
+		listen->onTouchEnded = CC_CALLBACK_2(DeckScene::onTouchEnded, this);
+		Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
 	}
+
 	readyMenu->setVisible(true);
-
-	//touch listener
-	auto listen = EventListenerTouchOneByOne::create();
-	listen->onTouchBegan = CC_CALLBACK_2(DeckScene::onTouchBegan, this);
-	listen->onTouchMoved = CC_CALLBACK_2(DeckScene::onTouchMoved, this);
-	listen->onTouchEnded = CC_CALLBACK_2(DeckScene::onTouchEnded, this);
-	Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listen, this);
-
 //	menu->setColor(Color3B(172, 64, 90));
 //	log("Menu Size : %f %f", menu->getContentSize().width, menu->getContentSize().height);
 //	log("Menu AnchorPoint: %f %f", menu->getAnchorPoint().x, menu->getAnchorPoint().y);
@@ -186,9 +206,9 @@ void DeckScene::initDeck()
 //	log("Setting AnchorPoint: %f %f", setBtn->getAnchorPoint().x, setBtn->getAnchorPoint().y);
 //	log("Setting Point: %f %f", setBtn->getPositionX(), setBtn->getPositionY());
 
-	addChild(menu);
 }
 
+//异步加载完成之后清除进度条然后显示游戏界面
 void DeckScene::preload(float dt)
 {
 	auto manager = GameManager::getInstance();
@@ -199,15 +219,21 @@ void DeckScene::preload(float dt)
 	if (manager->numberOfLoadRes >= manager->numberOfTotalRes)
 	{
 		unschedule(schedule_selector(DeckScene::preload));
-		this->runAction(Sequence::create(DelayTime::create(1.0f), 
+		this->runAction(Sequence::create(DelayTime::create(2.0f), 
 			CallFunc::create([=] 
 			{
 				progress->removeFromParentAndCleanup(true); 
 				loadLabel->removeFromParentAndCleanup(true);
-				initDeck(); 
+				initDeck(true); 
 			}), 
 			nullptr));
 	}
+}
+
+//准备游戏
+void DeckScene::readyGame()
+{
+	GameManager::getInstance()->readyGame();
 }
 
 /** create the menu, shuffle the cards and assign them to the player **/
@@ -257,10 +283,6 @@ void DeckScene::startGame()
 		randCards.push_back(i);
 	}
 	random_shuffle(randCards.begin(), randCards.end());
-
-	player->setAttribute(0, 0, 0, true, randCards);
-	player1->setAttribute(1, 1, 1, false, randCards);
-	player2->setAttribute(1, 2, 2, false, randCards);
 
 	player->sortCard();
 	//display the card of each player
@@ -409,6 +431,67 @@ void DeckScene::flashCard()
 			log("Index:%d, x:%f y:%f", i, card->getPositionX(), card->getPositionY());
 		}
 		addChild(card);
+	}
+}
+
+//定时器函数检查服务器消息
+void DeckScene::update(float delta)
+{
+	auto manager = GameManager::getInstance();
+	//如果有新的人进入房间
+	if (manager->enterPlayerList.size() > 0)
+	{
+		if (!isInGame)
+		{
+			//顺时针放置玩家
+			auto index = player->getserverPos();
+			for (auto simplePlayer : manager->enterPlayerList)
+			{
+				//放左边
+				if (simplePlayer.serverPosition == (index + 1) % 3)
+				{
+					player1->setName(simplePlayer.name);
+					player1->setserverPos(simplePlayer.serverPosition);
+					player1->setReady(simplePlayer.ready);
+				}
+				else
+				{
+					player2->setName(simplePlayer.name);
+					player2->setserverPos(simplePlayer.serverPosition);
+					player2->setReady(simplePlayer.ready);
+				}
+			}
+		}
+		manager->enterPlayerList.clear();
+	}
+	//如果有人准备
+	if (manager->readyPlayerList.size() > 0)
+	{
+		if (!isInGame)
+		{
+			for (auto name : manager->readyPlayerList)
+			{
+				if (name == player->getPlayerName() && readyFlag == nullptr)
+				{
+					readyFlag = Sprite::create("ready.png");
+					readyFlag->setPosition(player->getPositionX() + 80, player->getPositionY());
+					addChild(readyFlag);
+				}
+				else if (name == player1->getPlayerName() && readyFlag1 == nullptr)
+				{
+					readyFlag1 = Sprite::create("ready.png");
+					readyFlag2->setPosition(player->getPositionX() + 80, player->getPositionY());
+					addChild(readyFlag1);
+				}
+				else if (name == player2->getPlayerName() && readyFlag2 == nullptr)
+				{
+					readyFlag2 = Sprite::create("ready.png");
+					readyFlag2->setPosition(player->getPositionX() - 80, player->getPositionY());
+					addChild(readyFlag2);
+				}
+			}
+		}
+		manager->readyPlayerList.clear();
 	}
 }
 

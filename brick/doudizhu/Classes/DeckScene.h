@@ -13,20 +13,23 @@ public:
 	static Scene* createScene();
 	virtual bool init();
 
-	void initDeck();
+	void initDeck(bool first);
 	void preload(float);
+	void readyGame();
 	void startGame();
 	void exitGame();
 	void outCard(int flag);
 	void callDiZhu(int flag);
 	void displaySetting();
 	void flashCard();
+
+	virtual void update(float delta);
 	virtual bool onTouchBegan(Touch *touch, Event *unused_event);
 	virtual void onTouchesMoved(const std::vector<Touch *>& touches, Event *unused_event);
 	virtual void onTouchEnded(Touch *touch, Event *unused_event);
 	CREATE_FUNC(DeckScene);
 
-	CC_SYNTHESIZE(Vector<PokerCard *>, cardArray, CardArray);
+	//CC_SYNTHESIZE(Vector<PokerCard *>, cardArray, CardArray);
 protected:
 private:
 	Sprite* progress;
@@ -36,10 +39,14 @@ private:
 	Point origin;
 	float blackVertical;
 	float blackHorizon;
+	float margin_top;
+	float margin_right;
+	float margin_left;
 	Menu* readyMenu;
 	Menu* callMenu;
 	Menu* robMenu;
 	Menu* outCardMenu;
+	Menu* setMenu;
 	Player* player;			//myself
 	Player* player1;		//player in the left
 	Player* player2;		//player in the right
@@ -56,6 +63,10 @@ private:
 	Sprite* bottomCard1;	
 	Sprite* bottomCard2;	
 	Sprite* bottomCard3;
+
+	Sprite* readyFlag;		//准备的图标
+	Sprite* readyFlag1;
+	Sprite* readyFlag2;
 
 	PokerArrayType currentPokerType;			//the poker type in this round
 

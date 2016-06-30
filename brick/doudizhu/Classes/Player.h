@@ -8,14 +8,21 @@ USING_NS_CC;
 class Player : public Sprite 
 {
 public:
-	static Player* create(std::string);
+	enum PlayerType
+	{
+		ILLEGAL,
+		DIZHU = 1,
+		NONGMING,
+	};
+	static Player* create(std::string, int roomPos);
 
-	void setAttribute(int type, int roomPos, int index, bool dizhu, std::vector<int> &);
+	void setAttribute(int serverPos, std::vector<int> &);
 	void sortCard();
-	CC_SYNTHESIZE(int, type, Type);
+	CC_SYNTHESIZE(int, serverPos, serverPos);
 	CC_SYNTHESIZE(int, roomPos, RoomPos);	//position in the room
+	CC_SYNTHESIZE(PlayerType, ident, Ident);
 	CC_SYNTHESIZE(std::string, playerName, PlayerName);
-	CC_SYNTHESIZE(bool, diZhu, DiZhu);
+	CC_SYNTHESIZE(bool, ready, Ready);
 	std::vector<PokerCard *> leftCard;
 	std::vector<PokerCard *> outCard;
 protected:

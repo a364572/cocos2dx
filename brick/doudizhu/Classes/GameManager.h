@@ -37,6 +37,12 @@ public:
 	bool inGame;
 };
 
+struct SimplePlayer
+{
+	std::string name;
+	int serverPosition;
+	bool ready;
+};
 enum MessageType
 {
 	//ILLEGAL = 0,
@@ -82,7 +88,7 @@ public:
 	void getRoomList();
 	void createRoom(std::string room);
 	void enterRoom(std::string room);
-	void ready();
+	void readyGame();
 	void outCard(std::vector<PokerCard *> cards);
 
 	void handleCreatePlayerResult();
@@ -103,9 +109,12 @@ public:
 	int numberOfLoadRes;
 	int readBufLength;
 	int remainLength;
-	bool isWaitingPlayer; //0表示没在等 1表示在等 2表示成功 3表示失败
-	int isWaitingRoom;
+	int serverPosition;
+	int isWaitingRoom;		//0表示没在等 1表示在等 2表示成功 3表示失败
 	int isWaitingList;
+	int isWaitingReady;
+	int isInGame;			//0表示没开始 1表示准备好开始了 2表示正在游戏中
+	int isWaitingPlayer; 
 	bool isConnected;
 	char readBuf[BUFFER_SIZE];
 	SOCKET sock;
@@ -115,6 +124,8 @@ public:
 	Vector<PokerCard *> rawCardArray;
 	Vector<Sprite *> numberArray;
 	std::vector<GameRoom> roomList;
+	std::vector<std::string> readyPlayerList;
+	std::vector<SimplePlayer> enterPlayerList;
 	std::string player;
 	std::string roomName;
 private:
